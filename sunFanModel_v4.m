@@ -10,6 +10,9 @@ function sunFanModel_v4()
 clear,clc
 dbstop if error 
 
+% add the model source folder to the path
+addpath('source')
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
 runName = 'run1'; % base name for run and file output
@@ -88,6 +91,7 @@ grid = updateSlope(grid,boundaryCondition,t); % updates slope, stored in 'grid'
 % flag grid cell with inlet as a channel cell
 grid.channelFlag(inlet.row,inlet.col) = true;
 
+
 grid.deltaz = zeros(grid.size);
 
 tStep_sec = tStep_yr*pi*1e7;
@@ -102,9 +106,15 @@ fprintf('Saved file %s\n',filename)
 filename = [runName,'_parameters.mat'];
 save(filename)
 
+% show a debugging figure?
+% this is computationally expensive, so only use to debug
+debugFigure = true;
+if debugFigure
+    debugFig = figure('Position', [10 10 900 600]);
+end
+
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for t = tStep_sec:tStep_sec:tMax_sec
-    
         
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma);
@@ -135,7 +145,12 @@ save(filename)
         % negative slope values (i.e., adverse slope)). In those cases,
         % no sediment should leave the cell.
         grid.Qs_out(grid.Qs_out<0) = 0;
-            
+        
+        % update the debugging figure
+        if debugFigure
+            debugFig = updateDebugFigure(debugFig, grid);
+        end
+        
         % Enforce no sediment flux out for any cells that do not flow to
         % other cells
         grid.Qs_out(cellfun(@isempty,grid.flowsTo)) = 0;
@@ -144,7 +159,7 @@ save(filename)
         % level. (This is likely redundant, as no ocean cells should flow
         % to any other cells). 
         grid.Qs_out(grid.oceanFlag) = 0;
-
+        
         if any(isnan(grid.Qs_out(grid.channelFlag)))
             error('Unexpected NaN value in sediment flux calculation');
         end
@@ -210,7 +225,7 @@ save(filename)
         
         % update topography for all grid cells
         grid.z = grid.z + grid.deltaz;
-              
+        
         grid = updateSlope(grid,boundaryCondition,t); % update slope arrays following topography update
 
         % update grid.oceanFlag following topography update
@@ -288,6 +303,7 @@ save(filename)
         % topographic sink (local minimum). 
         
         if ~isempty(newAvulsions.rNew)
+            
             % identify sinks as cells with a difference between the filled and
             % unfilled DEM greater than numerical precision. Sinks are used to
             % halt the consturction of new avulsion paths. 
@@ -295,7 +311,7 @@ save(filename)
             grid.sinkFlag = (grid.zFill - grid.z) > eps;
        
             for n=1:numel(newAvulsions.rNew)
-            
+                
                 % update distributary/tributary data in network
                 % geometry
                 grid.flowsTo{newAvulsions.indSource(n)} = [grid.flowsTo{newAvulsions.indSource(n)}; newAvulsions.indNew(n)]; % append new cell to the "flows to" list
@@ -333,7 +349,7 @@ save(filename)
                 end
             end
         end % end path construction for avulsions
-         
+        
         % episodically save model output
         tElapsedSinceSave_yr = tElapsedSinceSave_yr + tStep_sec/(pi*1e7);
         if tElapsedSinceSave_yr >= tSaveInterval_yr || t == tMax_yr
