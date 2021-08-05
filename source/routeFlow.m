@@ -131,25 +131,9 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma)
             cellIndFlowToRoute = find(grid.Qw_toRoute>eps,1,'first');
         end
         
-        % check that all cells with flowsTo defined also have the discharge
-        % partitioning defined
-        for k=1:numel(grid.channelFlag)
-            if grid.channelFlag(k)
-                if ~isempty(grid.flowsTo{k}) && isempty(grid.flowsToFrac_Qw_distributed{k})
-                    if grid.Qw(k)<eps % i.e., if cell got no flow
-                        grid.flowsToFrac_Qw_distributed{k}=zeros(size(grid.flowsTo{k})); % record its discharge partition as 0 for all downstream cells
-                    elseif numel(grid.flowsTo{k})==1
-                        grid.flowsToFrac_Qw_distributed{k} = 1;
-                    else
-                        error('Flow routing: Discharge partition fraction not saved for cell with flow')
-                    end
-                end
-            end
-        end
-        
         % flow routing is now complete. Run some diagnostic checks:
         % (1) Check that no cell has a discharge greater than the inlet discharges 
-        if any((grid.Qw(:) - Qw_inlet) > eps)
+        if any((grid.Qw(:) - Qw_inlet) > 1e-3)
             error('Error in flow routing: discharge greater than input discharge detected')
         end
         

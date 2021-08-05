@@ -9,7 +9,7 @@ function sunFanModel_v4()
 % Last edited July 23, 2021 by Ajay B. Limaye. 
 
 clear,clc
-dbstop if error 
+dbstop if error
 
 % add the model source folder to the path
 addpath('source')
@@ -53,7 +53,7 @@ grid.yExtent = grid.xExtent; % added separate variabel for side length if y-dime
 % time variables
 t = 0; % Initialize time
 tMax_yr = 10; % simulation time, years
-tStep_yr = 1e-5; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
+tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 0.1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
@@ -203,16 +203,23 @@ end
                             % at the tributary to set the partition fraction
                             % for sediment
                             Qs_out_fromContributingCell = grid.Qs_out(contributingCells(k));
-                            Qw_fraction_receivedFromContributingCell = grid.flowsToFrac_Qw_distributed{contributingCells(k)};    
-                            [receivingCellRow,receivingCellCol] = ind2sub(grid.size,grid.flowsTo{contributingCells(k)});
-                            if i==receivingCellRow(1) && j==receivingCellCol(1)
-                                Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(1);
-                            elseif i==receivingCellRow(2) && j==receivingCellCol(2)
-                                Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(2);
-                            else
-                                error('Error in data lookup for contributing cell')
+                            % Qs_out_fromContributingCell is sometimes empty:
+                            % if discharge did not reach this location due to routeFlow rules,
+                            % depsite these cells being connected by a channel in the tracking cell arrays.
+                            % We thus include a safety here, to just proceed with the Qs calculation,
+                            % but with 0 sediment contribution from this cell
+                            if Qs_out_fromContributingCell > 0
+                                Qw_fraction_receivedFromContributingCell = grid.flowsToFrac_Qw_distributed{contributingCells(k)};  
+                                [receivingCellRow,receivingCellCol] = ind2sub(grid.size,grid.flowsTo{contributingCells(k)});
+                                if i==receivingCellRow(1) && j==receivingCellCol(1)
+                                    Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(1);
+                                elseif i==receivingCellRow(2) && j==receivingCellCol(2)
+                                    Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(2);
+                                else
+                                    error('Error in data lookup for contributing cell')
+                                end
+                                grid.Qs_in(i,j) = grid.Qs_in(i,j) + Qs_out_fromContributingCell*Qw_fraction_receivedFromContributingCell;
                             end
-                            grid.Qs_in(i,j) = Qs_out_fromContributingCell*Qw_fraction_receivedFromContributingCell;
                         end
                     else
                         % throw error if this cell is flagged as a channel
@@ -242,6 +249,11 @@ end
 
         % update grid.oceanFlag following topography update
         grid.oceanFlag = grid.z <= oceanLevel;
+        
+        % check that any channels that are receiving flow below threshold
+        % are disconnected from the network
+        Qw_threshold = 0.05;
+        grid = unmarkAbandonedChannels(grid,Qw_threshold);
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
