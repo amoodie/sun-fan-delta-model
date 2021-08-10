@@ -22,9 +22,12 @@
                     % if this cell is a channel cell, look up the cell(s) it
                     % flows to
                     flowsTo = grid.flowsTo{k};
+                    [ri,ci] = ind2sub(grid.size, k); % row,col of cell i
                     S_temp = nan(size(flowsTo));
                     for l=1:numel(flowsTo)
-                        S_temp(l) = -(grid.z(flowsTo(l)) - grid.z(k)); % downhill slopes are defined as positive
+                        [rj,cj] = ind2sub(grid.size, flowsTo(l)); % row,col of cell j
+                        distance = sqrt((rj-ri)^2 + (cj-ci)^2) * grid.dx;  % distance along flow
+                        S_temp(l) = -(grid.z(flowsTo(l)) - grid.z(k)) / distance; % downhill slopes are defined as positive
                     end
                     grid.S.alongFlow(k) = max(S_temp); % if there are multiple flowsTo cells, treat slope as the maximum of slopes to each cell
                 end         

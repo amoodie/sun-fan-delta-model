@@ -3,16 +3,21 @@ function sunFanModel_v4()
 % fan deltas: Linking channel processes with large-scale morphodynamics, 
 % Water Resources Research 38(8), doi:10.1029/2001WR000284. All model
 % parameters are taken from Tables 1 and 2 in the paper.
-% Created June 30, 2021 by Ajay B. Limaye, University of Virginia
-% (ajay@virginia.edu). 
+% Created June 30, 2021
+% Ajay B. Limaye, University of Virginia (ajay@virginia.edu) 
+% Andrew Moodie, UT Austin
 % Last edited July 23, 2021 by Ajay B. Limaye. 
 
 clear,clc
 dbstop if error 
 
+% add the model source folder to the path
+addpath('source')
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
 runName = 'run1'; % base name for run and file output
+clobber = false; % whether to overwrite output folder if exists
 
 % Dimensionless parameters (from Table 1)
 alpha_so = 11.25;
@@ -80,7 +85,7 @@ inlet.row = 1;
 % [~,inlet.col] = min(grid.z(inlet.row,:));
 inlet.col = 50;
 
-boundaryCondition = 'closed'; 
+boundaryCondition = 'closed';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 grid = updateSlope(grid,boundaryCondition,t); % updates slope, stored in 'grid'
@@ -93,18 +98,35 @@ grid.deltaz = zeros(grid.size); % change in elev per time
 tStep_sec = tStep_yr*pi*1e7;
 tMax_sec = tMax_yr*pi*1e7;
 
+% set up an output folder for this run
+outputFolderPath = fullfile('output',runName);
+if ~exist(outputFolderPath,'dir')
+       mkdir(outputFolderPath)
+else
+    % error if clobber is set to false, so not to overwrite runs
+    if ~clobber
+        error('Output folder already exists and clobber is false')
+    end
+end
+
 % save initial grid
-filename = [runName,'_time_0.mat'];
+filename = fullfile(outputFolderPath,[runName,'_time_0.mat']);
 save(filename,'grid','t')
 fprintf('Saved file %s\n',filename)
 
 % save model parameters (all the variables so far) to file
-filename = [runName,'_parameters.mat'];
+filename = fullfile(outputFolderPath,[runName,'_parameters.mat']);
 save(filename)
+
+% show a debugging figure?
+% this is computationally expensive, so only use to debug
+debugFigure = true;
+if debugFigure
+    debugFig = figure('Position', [10 10 900 600]);
+end
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for t = tStep_sec:tStep_sec:tMax_sec
-    
         
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma);
@@ -135,7 +157,12 @@ save(filename)
         % negative slope values (i.e., adverse slope)). In those cases,
         % no sediment should leave the cell.
         grid.Qs_out(grid.Qs_out<0) = 0;
-            
+        
+        % update the debugging figure
+        if debugFigure
+            debugFig = updateDebugFigure(debugFig, grid);
+        end
+        
         % Enforce no sediment flux out for any cells that do not flow to
         % other cells
         grid.Qs_out(cellfun(@isempty,grid.flowsTo)) = 0;
@@ -144,7 +171,7 @@ save(filename)
         % level. (This is likely redundant, as no ocean cells should flow
         % to any other cells). 
         grid.Qs_out(grid.oceanFlag) = 0;
-
+        
         if any(isnan(grid.Qs_out(grid.channelFlag)))
             error('Unexpected NaN value in sediment flux calculation');
         end
@@ -210,7 +237,7 @@ save(filename)
         
         % update topography for all grid cells
         grid.z = grid.z + grid.deltaz;
-              
+        
         grid = updateSlope(grid,boundaryCondition,t); % update slope arrays following topography update
 
         % update grid.oceanFlag following topography update
@@ -288,6 +315,7 @@ save(filename)
         % topographic sink (local minimum). 
         
         if ~isempty(newAvulsions.rNew)
+            
             % identify sinks as cells with a difference between the filled and
             % unfilled DEM greater than numerical precision. Sinks are used to
             % halt the consturction of new avulsion paths. 
@@ -295,7 +323,7 @@ save(filename)
             grid.sinkFlag = (grid.zFill - grid.z) > eps;
        
             for n=1:numel(newAvulsions.rNew)
-            
+                
                 % update distributary/tributary data in network
                 % geometry
                 grid.flowsTo{newAvulsions.indSource(n)} = [grid.flowsTo{newAvulsions.indSource(n)}; newAvulsions.indNew(n)]; % append new cell to the "flows to" list
@@ -333,11 +361,11 @@ save(filename)
                 end
             end
         end % end path construction for avulsions
-         
+        
         % episodically save model output
         tElapsedSinceSave_yr = tElapsedSinceSave_yr + tStep_sec/(pi*1e7);
         if tElapsedSinceSave_yr >= tSaveInterval_yr || t == tMax_yr
-           filename = [runName,'_time_',num2str(t/(pi*1e7),'%4.2f'),'_yr.mat'];
+           filename = fullfile(outputFolderPath,[runName,'_time_',num2str(t/(pi*1e7),'%4.2f'),'_yr.mat']);
            save(filename,'grid','t','oceanLevel')
            tElapsedSinceSave_yr = 0; % reset elapsed time since save 
            fprintf('Saved file %s\n',filename)
