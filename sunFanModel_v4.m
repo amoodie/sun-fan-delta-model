@@ -13,6 +13,7 @@ dbstop if error
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
 runName = 'run1'; % base name for run and file output
+clobber = false; % whether to overwrite output folder if exists
 
 % Dimensionless parameters (from Table 1)
 alpha_so = 11.25;
@@ -80,7 +81,7 @@ inlet.row = 1;
 % [~,inlet.col] = min(grid.z(inlet.row,:));
 inlet.col = 50;
 
-boundaryCondition = 'closed'; 
+boundaryCondition = 'closed';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 grid = updateSlope(grid,boundaryCondition,t); % updates slope, stored in 'grid'
@@ -93,13 +94,24 @@ grid.deltaz = zeros(grid.size);
 tStep_sec = tStep_yr*pi*1e7;
 tMax_sec = tMax_yr*pi*1e7;
 
+% set up an output folder for this run
+outputFolderPath = fullfile('output',runName);
+if ~exist(outputFolderPath,'dir')
+       mkdir(outputFolderPath)
+else
+    % error if clobber is set to false, so not to overwrite runs
+    if ~clobber
+        error('Output folder already exists and clobber is false')
+    end
+end
+
 % save initial grid
-filename = [runName,'_time_0.mat'];
+filename = fullfile(outputFolderPath,[runName,'_time_0.mat']);
 save(filename,'grid','t')
 fprintf('Saved file %s\n',filename)
 
 % save model parameters (all the variables so far) to file
-filename = [runName,'_parameters.mat'];
+filename = fullfile(outputFolderPath,[runName,'_parameters.mat']);
 save(filename)
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -337,7 +349,7 @@ save(filename)
         % episodically save model output
         tElapsedSinceSave_yr = tElapsedSinceSave_yr + tStep_sec/(pi*1e7);
         if tElapsedSinceSave_yr >= tSaveInterval_yr || t == tMax_yr
-           filename = [runName,'_time_',num2str(t/(pi*1e7),'%4.2f'),'_yr.mat'];
+           filename = fullfile(outputFolderPath,[runName,'_time_',num2str(t/(pi*1e7),'%4.2f'),'_yr.mat']);
            save(filename,'grid','t','oceanLevel')
            tElapsedSinceSave_yr = 0; % reset elapsed time since save 
            fprintf('Saved file %s\n',filename)
