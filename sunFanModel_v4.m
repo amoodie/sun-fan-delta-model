@@ -3,8 +3,9 @@ function sunFanModel_v4()
 % fan deltas: Linking channel processes with large-scale morphodynamics, 
 % Water Resources Research 38(8), doi:10.1029/2001WR000284. All model
 % parameters are taken from Tables 1 and 2 in the paper.
-% Created June 30, 2021 by Ajay B. Limaye, University of Virginia
-% (ajay@virginia.edu). 
+% Created June 30, 2021
+% Ajay B. Limaye, University of Virginia (ajay@virginia.edu) 
+% Andrew Moodie, UT Austin
 % Last edited July 23, 2021 by Ajay B. Limaye. 
 
 clear,clc
