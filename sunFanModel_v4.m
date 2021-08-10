@@ -93,8 +93,7 @@ grid = updateSlope(grid,boundaryCondition,t); % updates slope, stored in 'grid'
 % flag grid cell with inlet as a channel cell
 grid.channelFlag(inlet.row,inlet.col) = true;
 
-
-grid.deltaz = zeros(grid.size);
+grid.deltaz = zeros(grid.size); % change in elev per time
 
 tStep_sec = tStep_yr*pi*1e7;
 tMax_sec = tMax_yr*pi*1e7;
