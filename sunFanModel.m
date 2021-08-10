@@ -41,6 +41,7 @@ beta = 1;
 % Dimensioned parameters (from Table 2, base case)
 Qw_inlet = 20; % water discharge, m^3/s
 Qs_inlet = 0.04; % sediment discharge, m^3/s (named Q_sf in original paper)
+Qw_threshold = 0.05; % water discharge fraction to cut off channels
 D = 0.3e-3; % grain diameter, m
 oceanLevel = 0.01; %elevation of ponded water, m (named xi_theta in the paper)
 
@@ -252,7 +253,6 @@ end
         
         % check that any channels that are receiving flow below threshold
         % are disconnected from the network
-        Qw_threshold = 0.05;
         grid = unmarkAbandonedChannels(grid,Qw_threshold);
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
