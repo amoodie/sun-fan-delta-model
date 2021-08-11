@@ -42,6 +42,7 @@ beta = 1;
 Qw_inlet = 20; % water discharge, m^3/s
 Qs_inlet = 0.04; % sediment discharge, m^3/s (named Q_sf in original paper)
 Qw_threshold = 0.05; % water discharge fraction to cut off channels
+Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 D = 0.3e-3; % grain diameter, m
 oceanLevel = 0.01; %elevation of ponded water, m (named xi_theta in the paper)
 
@@ -130,7 +131,7 @@ end
     for t = tStep_sec:tStep_sec:tMax_sec
         
         % route flow to get discharge along each channel
-        grid=routeFlow(grid,inlet,Qw_inlet,gamma);
+        grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance);
         
         % look up slope along flow paths
         grid=slopeAlongFlow(grid); % updates field grid.S.alongFlow

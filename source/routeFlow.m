@@ -1,4 +1,4 @@
-function grid=routeFlow(grid,inlet,Qw_inlet,gamma)
+function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
      
         % routeFlow: routes flow along the channel network, splitting flow at branches using eqn. 11.
         grid.Qw = zeros(grid.size); % initialize grid that stores total water discharge during flow routing
@@ -133,7 +133,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma)
         
         % flow routing is now complete. Run some diagnostic checks:
         % (1) Check that no cell has a discharge greater than the inlet discharges 
-        if any((grid.Qw(:) - Qw_inlet) > 1e-3)
+        if any((grid.Qw(:) - Qw_inlet) > Qw_mismatch_tolerance)
             error('Error in flow routing: discharge greater than input discharge detected')
         end
         
