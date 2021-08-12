@@ -1,5 +1,6 @@
 function [fig] = updateDebugFigure(fig, grid)
 
+    % grab the subplots
     sp1 = subplot(2, 3, 1);
     sp2 = subplot(2, 3, 2);
     sp3 = subplot(2, 3, 3);
@@ -10,40 +11,38 @@ function [fig] = updateDebugFigure(fig, grid)
     subplot(sp1)
         imagesc(grid.z);
         colormap(sp1, 'summer');
-        xlim([40,60]);
-        ylim([0.5,20]);
         title('bed elev');
+
     subplot(sp2)
         imagesc(grid.deltaz);
         colormap(sp2, 'turbo');
         caxis([-1e-4, 1e-4]);
-        xlim([40,60]);
-        ylim([0.5,20]);
         title('bed change');
+
     subplot(sp3)
-        imagesc(grid.z + grid.H);
+        stage = grid.z + grid.H;
+        upperlim = prctile(stage(:), 90);
+        stage(~isfinite(stage)) = NaN; grid.z((~isfinite(stage)));
+        imagesc(stage);
+        caxis([min(min(stage)), upperlim])
         colormap(sp3, 'winter');
-        xlim([40,60]);
-        ylim([0.5,20]);
         title('stage');
+
     subplot(sp4)
         imagesc(grid.S.alongFlow);
         colormap(sp4);
-        xlim([40,60]);
-        ylim([0.5,20]);
         title('slope');
+
     subplot(sp5)
         imagesc(grid.Qw);
         colormap(sp5, 'cool');
-        xlim([40,60]);
-        ylim([0.5,20]);
         title('Qw');
+
     subplot(sp6)
         imagesc(grid.channelFlag);
         colormap(sp6, 'gray');
-        xlim([40,60]);
-        ylim([0.5,20]);
         title('channelFlag');
+
     drawnow
 
 

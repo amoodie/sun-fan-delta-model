@@ -12,7 +12,7 @@ clear,clc
 dbstop if error
 
 % add the model source folder to the path
-addpath('source')
+addpath(genpath('source'))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
@@ -123,6 +123,7 @@ save(filename)
 % show a debugging figure?
 % this is computationally expensive, so only use to debug
 debugFigure = true;
+debugFigureUpdateTime = tStep_sec * 10; % how often to update
 if debugFigure
     debugFig = figure('Position', [10 10 900 600]);
 end
@@ -162,7 +163,9 @@ end
         
         % update the debugging figure
         if debugFigure
-            debugFig = updateDebugFigure(debugFig, grid);
+            if mod(t, debugFigureUpdateTime) == 0
+                debugFig = updateDebugFigure(debugFig, grid);
+            end
         end
         
         % Enforce no sediment flux out for any cells that do not flow to
