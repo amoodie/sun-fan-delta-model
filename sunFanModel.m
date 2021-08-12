@@ -1,4 +1,4 @@
-function sunFanModel_v4()
+function sunFanModel()
 % sunFanModel.m: Implements numerical model in Sun et al. (2002), Fluvial 
 % fan deltas: Linking channel processes with large-scale morphodynamics, 
 % Water Resources Research 38(8), doi:10.1029/2001WR000284. All model
@@ -6,7 +6,6 @@ function sunFanModel_v4()
 % Created June 30, 2021
 % Ajay B. Limaye, University of Virginia (ajay@virginia.edu) 
 % Andrew Moodie, UT Austin
-% Last edited July 23, 2021 by Ajay B. Limaye. 
 
 clear,clc
 dbstop if error
