@@ -1,4 +1,4 @@
-function grid = updateTopography(grid,inlet,lambda,tStep_sec)    
+function grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet)    
 % updateTopography.m: updates bed elevation along flow paths using Equation 12.
     grid.Qs_in = zeros(grid.size);
     for i=1:grid.size(1)
