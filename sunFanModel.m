@@ -148,7 +148,7 @@ end
         end
         
         % update bed elevation along flow paths
-        grid = updateTopography(grid,inlet,lambda,tStep_sec); 
+        grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet); 
         
         % update slope arrays following topography update
         grid = updateSlope(grid,boundaryCondition,t); 
