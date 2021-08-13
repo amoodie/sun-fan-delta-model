@@ -13,6 +13,8 @@ dbstop if error
 % add the model source folder to the path
 addpath(genpath('source'))
 
+rng(1)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
 runName = 'run1'; % base name for run and file output
@@ -129,6 +131,9 @@ end
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for t = tStep_sec:tStep_sec:tMax_sec
+        
+        % check that the network is valid (and repair/trim) what is not
+        grid=validateNetwork(grid,inlet);
         
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance);
