@@ -59,7 +59,7 @@ function grid = enactAvulsions(newAvulsions,grid,inlet)
             % start the path finding for the new avulsion-created channel.
             % This process starts from the new avulsion-created channel head
             % (iStart, jStart), and not from the avulsion site.
-            grid=propagateAvulsion(grid,iStart,jStart,[newAvulsions.indSource]);
+            grid=propagateAvulsion(grid,iStart,jStart,[newAvulsions.indSource(n)]);
         end
     end
 
