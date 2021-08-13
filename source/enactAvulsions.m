@@ -22,7 +22,6 @@ function grid = enactAvulsions(newAvulsions,grid,inlet)
         % start the new segment at the previously determined avulsion destination
         iStart = newAvulsions.rNew(n);
         jStart = newAvulsions.cNew(n);
-        grid.channelFlag(iStart,jStart)=true; % flags new avulsion cell as channel
         % Propagate the avulsion channel if the current cell is
         % subaerial (i.e., oceanFlag == false)
 
@@ -36,8 +35,31 @@ function grid = enactAvulsions(newAvulsions,grid,inlet)
             end
         end
 
-        if ~grid.oceanFlag(iStart,jStart)
-            grid=propagateAvulsion(grid,iStart,jStart);
+        % first we want to check if this cell is already marked as a
+        % channel; in this scenario, we don't want to do any avulsion path
+        % finding, the path is already determined. This scenarios arises
+        % when 1) we avulse into a channel that simply exists in a
+        % neighboring cell, but it is also arises when multiple avulsions
+        % are identified in a single `avulsionCheck` call, several of which
+        % might flow into the same cell.
+        if grid.channelFlag(iStart, jStart)
+            % if this cell is already a channel, we don't want to do any
+            % avulsion path finding.
+            continue % end this iteration of the for loop
+        elseif grid.oceanFlag(iStart,jStart)
+            % this is an ocean cell, we don't want to do any avulsion
+            % path finding
+            grid.channelFlag(iStart,jStart)=true; % flags new avulsion cell as channel
+            continue % end this iteration of the for loop
+        else
+            % this is a non-ocean and non-channel cell, so we need to find
+            % a pathways across the land
+            grid.channelFlag(iStart,jStart)=true; % flags new avulsion cell as channel
+
+            % start the path finding for the new avulsion-created channel.
+            % This process starts from the new avulsion-created channel head
+            % (iStart, jStart), and not from the avulsion site.
+            grid=propagateAvulsion(grid,iStart,jStart,[newAvulsions.indSource]);
         end
     end
 
