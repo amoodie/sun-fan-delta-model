@@ -1,15 +1,23 @@
 function [grid] = validateNetwork(grid,inlet)
 % validateNetwork Determine the network is a acyclic directed graph.
-    % This function determines whether there are any *invalidating* loops,
-    % and removes any that are found. The algorithm is recursive,
-    % essentially walking down each flow pathway encountered, and keeping a
-    % record of everywhere we have been (prevIndList).
+    % This function determines whether there are any *invalidating* loops, and
+    % removes any that are found. The algorithm is recursive, essentially
+    % walking down each flow pathway encountered, and keeping a record of
+    % everywhere we have been (`prevIndList`). When a cell is encountered
+    % that has already been visited along this flow pathway, this indicates a
+    % loop. Loops may be varied in size (and complexity, e.g., loops in
+    % loops). In the end, the grid network returned is a valid acyclic
+    % directed graph, meaning that there is one source node (inlet) and all
+    % pathways flow to an outlet without returning to where they have already
+    % been. This allows for local loops, e.g., where flow branches and later
+    % converges downstream, but continues to flow to an outlet.
     %
-    % In the end, the grid network returned is a valid acyclic directed
-    % graph, meaning that there is one source node (inlet) and all pathways
-    % flow to an outlet without returning to where they have already been.
-    % This allows for local loops, e.g., where flow branches and later
-    % converges downstream and continues to flow to an outlet.
+    % To be able to trim loops of all sizes and complexities, a slow but
+    % comprehensive walk is employed to trim the network (see `trimOutLoop`
+    % below). In summary, when a loop is encountered, a walk is stated from
+    % that cell *backwards* up the pathway until a branch is found to direct
+    % flow to another outlet. The looped pathway is then trimmed out of the
+    % network (i.e., abandoned).
 
     % allocate the "where we have been list" as empty
     prevIndList = [];
@@ -113,12 +121,37 @@ function [grid, trimFlag] = walkToNodeSearchForLoops(grid, startInd, prevIndList
 end
 
 function [grid] = trimOutLoop(grid, nextInd, prevIndList)
+    % To be able to trim loops of all sizes and complexities, a slow but
+    % comprehensive walk is employed to identify where to trim the network.
+    % When a loop is encountered, a walk is stated from that cell *backwards*
+    % up the pathway (from the end of `prevIndList` backwards) until a branch
+    % is identified that directs flow to an outlet (i.e., not to a loop).
+    %
+    % When this place is found, we trim out the pathway using
+    % `unmarkChannelToNode`, which removes the entire looped pathway as
+    % though it were abandoned by flow partitioning. If no location can be
+    % found (e.g., a single channel with a loop formed at the downstream
+    % end), the loop is simply trimmed off at the looping cell location and
+    % set as an outlet.
+    %
+    % NOTE: An alternative approach from walking to find a branch to abandon
+    % from, would be to simply set the looped cell as a new outlet and trim
+    % all pixels downstream of this point, however, this often leads to the
+    % same loop immediately reforming due to avulsion path finding. 
+    %
+    % Inputs:
+    %   grid
+    %   nextInd - the loop forming cell, where we would step to next and that would form a loop
+    %   prevIndList - all the places we have already been on this pathway
+
+    % allocate a bool to check whether the trim was successful
+    trimmed = false;
+
     % we want to unset the channel cells between *here* and the
     % last place that flows *somewhere other than here*.
     % To find that place, we walk *up* the previous index list, and
     % look for the first branch that does not return a trim
     % flag (i.e., it flows somewhere else).
-    trimmed = false;
     for k=0:numel(prevIndList)-1
         checkInd = prevIndList(end-k);
         if numel(grid.flowsTo{checkInd}) == 1

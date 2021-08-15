@@ -10,7 +10,15 @@
         %%% just uses the steepest descent path (their p. 6); I start
         %%% the path from the detected avulsion destination
         %%% point. 
+        %%%
+        %%% To prevent single-cell loop formation during avulsion path
+        %%% selection, we use the input array `forbiddenCells` to ensure that
+        %%% the maximum slope direction is never the cell that flow is
+        %%% avulsed from. To do this, we set any cell indices in
+        %%% `forbiddenCells` equal to `NaN`, so that this index is not
+        %%% selected during path finding.
        
+        % extract the initial point into shorthand i, j
         i = iStart;
         j = jStart;
         indCurrent = sub2ind(grid.size, i, j);
