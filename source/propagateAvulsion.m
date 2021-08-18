@@ -119,8 +119,8 @@ function [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, ng
     % option flag
     cornerOption = 'connected'; % 'connected' | 'present'
 
-    % preallocate the forbidden corners, same shape as forbiddenCells
-    forbiddenCorners = false(1,8);
+    % preallocate the forbidden corners, shape is for four possible corners
+    forbiddenCorners = false(1,4);
 
     % loop through
     for i=1:4
@@ -135,19 +135,22 @@ function [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, ng
                     % the channel cells are connected
 
                     % add this corner cell to the list of forbiddenCorners
-                    forbiddenCorners(corners(i)) = true;
+                    forbiddenCorners(i) = true;
                 end
 
             elseif strcmp(cornerOption, 'present')
                 % doesn't matter if these are connected
 
                 % add this corner to the list of forbiddenCorners
-                forbiddenCorners(corners(i)) = true;
+                forbiddenCorners(i) = true;
 
             end
         end
     end
+    
+    % convert the corners boolen to cell indices
+    forbiddenCorners = nghbrs(corners(forbiddenCorners));
 
     % anything that was forbidden or is a forbidden corner.
-    forbiddenCells = or(forbiddenCorners, forbiddenCells);
+    forbiddenCells = unique([forbiddenCorners, forbiddenCells]);
 end
