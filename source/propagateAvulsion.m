@@ -35,6 +35,9 @@
             nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
                            grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
                            grid.S.SW(indCurrent) grid.S.W(indCurrent)];
+                       
+            % add to the list of forbidden cells with the locations that would create crossover channels
+            [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, nghbrs, forbiddenCells);
             
             % adjust slope array for the forbiddenCells, changes to NaN
             matches = ismember(nghbrs, forbiddenCells);
@@ -76,4 +79,75 @@
                 end
            end           
         end % end while loop for avulsion path construction 
-    end % end nested function propagateAvulsion
+    end % end nested function propagateAvulsion        
+
+
+function [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, nghbrs, forbiddenCells)
+    %checkNeighborsChannelsCrossover Prevent crossover channels.
+    %
+    % Prevent the formation of crossover channels by checking neighboring
+    % cells for channel connections and if they exist, using it to forbid
+    % channels looping
+    %
+    % Examples of crossover channel cases to consider. In these examples,
+    % imagine the avulsion path is being selected for channel 2, that is,
+    % channel 1 already exists, and the next location chosen is the *.
+    % Background (non-occupied) cells are #.
+    %
+    %   Case A      Case B      Case C
+    %   -------     -------     -------
+    %    1 1 *       2 # #       1 1 *
+    %    2 2 1       1 2 1       2 2 3
+    %    # # #       # 1 *       # 3 #
+    %
+    % Case A and Case B are physically impossible. These, we prevent from
+    % forming by checking neighbors in a loop. Case C is potentially
+    % possible, but may be unrealistic, given the spatial constraint and
+    % channel widths. We use a parameter option flag to determine whether to
+    % disallow this case (`cornerOption=='present'` to prevent these
+    % avulsions, and `cornerOption=='connected'` to allow these avulsions).
+
+    % Note in all cases, there are only four possible locations for the
+    % crossover to form (the corners of the 3x3 grid). The approach here is
+    % to define the cell pairs that constrain those locations, and loop
+    % through them, determining if any cells should be prohibited.
+
+    % constraining cell pairs, starting from N-E pair
+    pairs = [2, 4; 4, 6; 6, 8; 8, 2]; % N-E; E-S; S-W; W-N
+    corners = [1; 3; 5; 7]; % NW; NE; SE; SW
+
+    % option flag
+    cornerOption = 'connected'; % 'connected' | 'present'
+
+    % preallocate the forbidden corners, same shape as forbiddenCells
+    forbiddenCorners = false(1,8);
+
+    % loop through
+    for i=1:4
+        ithPair = pairs(i,:);
+        % always check the presence of channels first (faster)
+        if all(grid.channelFlag(nghbrs(ithPair)))
+            % both constraining cells are channels
+            if strcmp(cornerOption, 'connected')
+                % check whether these two constraining cells are actually
+                % connected or are two different channels
+                if any(grid.flowsTo{nghbrs(ithPair(1))} == nghbrs(ithPair(2))) || any(grid.flowsTo{nghbrs(ithPair(2))} == nghbrs(ithPair(1)))
+                    % the channel cells are connected
+
+                    % add this corner cell to the list of forbiddenCorners
+                    forbiddenCorners(corners(i)) = true;
+                end
+
+            elseif strcmp(cornerOption, 'present')
+                % doesn't matter if these are connected
+
+                % add this corner to the list of forbiddenCorners
+                forbiddenCorners(corners(i)) = true;
+
+            end
+        end
+    end
+
+    % anything that was forbidden or is a forbidden corner.
+    forbiddenCells = or(forbiddenCorners, forbiddenCells);
+end
