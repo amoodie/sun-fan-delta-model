@@ -18,9 +18,11 @@ addpath(genpath('source'))
 % from a previous model run. To start a new run, use `false`.
 loadCheckpoint = false; 
 
+rng(12)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
-runName = 'run5'; % base name for run and file output
+runName = 'run1'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
 
 % Dimensionless parameters (from Table 1)
@@ -143,6 +145,7 @@ if debugFigure
 end
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+iter = 0;
     for t = startingTime:tStep_sec:tMax_sec
         
         % check that the network is valid (and repair/trim) what is not
@@ -196,5 +199,6 @@ end
            tElapsedSinceSave_yr = 0; % reset elapsed time since save 
            fprintf('Saved file %s\n',filename)
         end
+        iter = iter + 1;
     end % end time loop
 end % end function sunFanModel
