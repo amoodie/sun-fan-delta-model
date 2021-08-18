@@ -105,8 +105,13 @@
                 % end iteration of the while loop
                 continuePropagateAvulsion = false;
 
-            % elseif grid.sinkFlag(indNew)
-            % ..........
+            % Stop path construction if new point is a sink cell. In this
+            % scenario, we would only be able to go upslope to route of the
+            % sink, and we want to stop pathfinding
+            elseif grid.sinkFlag(indNew)
+
+                % end iteration of the while loop
+                continuePropagateAvulsion = false;
 
             % Continue path construction is the new point is an ordinary
             % land cell (non-ocean and non-channel cell)
