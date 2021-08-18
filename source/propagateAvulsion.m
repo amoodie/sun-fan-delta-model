@@ -55,8 +55,7 @@
             [iNew, jNew] = ind2sub(grid.size, indNew);
 
            % Stop path construction if new point is beyond domain boundary (Alternatively, could
-           % have sidewalls steer flow (closed boundary) or make boundary open or periodic). 
-           
+           % have sidewalls steer flow (closed boundary) or make boundary open or periodic).
            if iNew<1 || iNew>grid.size(1) || jNew<1 || jNew==grid.size(2)
                 continuePropagateAvulsion = false;
            else

@@ -13,8 +13,6 @@ dbstop if error
 % add the model source folder to the path
 addpath(genpath('source'))
 
-rng(1)
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
 runName = 'run1'; % base name for run and file output
