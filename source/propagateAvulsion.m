@@ -1,5 +1,4 @@
-
-    function grid=propagateAvulsion(grid,iStart,jStart) % nested function
+    function grid=propagateAvulsion(grid,iStart,jStart,forbiddenCells) % nested function
        % propagateAvulsion: creates path for avulsion channel.
         %%% Deviation from the Sun et al. (2002) model:
         %%% their approach is weighted toward a steepest
@@ -11,61 +10,61 @@
         %%% just uses the steepest descent path (their p. 6); I start
         %%% the path from the detected avulsion destination
         %%% point. 
+        %%%
+        %%% To prevent single-cell loop formation during avulsion path
+        %%% selection, we use the input array `forbiddenCells` to ensure that
+        %%% the maximum slope direction is never the cell that flow is
+        %%% avulsed from. To do this, we set any cell indices in
+        %%% `forbiddenCells` equal to `NaN`, so that this index is not
+        %%% selected during path finding.
        
+        % extract the initial point into shorthand i, j
         i = iStart;
         j = jStart;
+        indCurrent = sub2ind(grid.size, i, j);
         
+        % configure index stepper based on grid dimensions
+        iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
+                 +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
+
+        % while there is still non-ocean non-channel cells to walk
         continuePropagateAvulsion = true;
         while continuePropagateAvulsion
-            % identify neighboring cell associated with maximum slope
-            [Smax,indSmax] = max([grid.S.NW(i,j) grid.S.N(i,j) grid.S.NE(i,j) ...
-               grid.S.E(i,j) grid.S.SE(i,j) grid.S.S(i,j) grid.S.SW(i,j) grid.S.W(i,j)]);
-
-            if Smax == 0 % this if condition is no longer needed now that have imparted closed boundaries
-               iNew = i+1; % extend channel toward bottom of grid (advance by 1 row)
-               jNew = j;
-            else
-               if indSmax == 1 % NW
-                   iNew = i-1;
-                   jNew = j-1;
-               elseif indSmax == 2 % N
-                   iNew = i-1;
-                   jNew = j;
-               elseif indSmax == 3 % NE
-                   iNew = i-1;
-                   jNew = j+1;
-               elseif indSmax == 4 % E
-                   iNew = i;
-                   jNew = j+1;
-               elseif indSmax == 5 % SE
-                   iNew = i+1;
-                   jNew = j+1;
-               elseif indSmax == 6 % S
-                   iNew = i+1;
-                   jNew = j;
-               elseif indSmax == 7 % SW
-                   iNew = i+1;
-                   jNew = j-1;
-               elseif indSmax == 8 % W
-                   iNew = i;
-                   jNew = j-1;
-               end
+            % find the indices of the neighbors and get slopes to there
+            nghbrs = indCurrent + iwalk;
+            nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
+                           grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
+                           grid.S.SW(indCurrent) grid.S.W(indCurrent)];
+            
+            % adjust slope array for the forbiddenCells, changes to NaN
+            matches = ismember(nghbrs, forbiddenCells);
+            nghbrSlopes(matches) = NaN;
+            
+            % do a safety check that some cell is finite
+            % (choosable).
+            if ~any(isfinite(nghbrSlopes))
+                error('all non-finite slopes encountered')
             end
+            
+            % now find the index of the next location to visit
+            [Smax,indSmax] = max(nghbrSlopes);
+    
+            % now take the step
+            step = iwalk(indSmax);
+            indNew = indCurrent + step;
+            [iNew, jNew] = ind2sub(grid.size, indNew);
 
            % Stop path construction if new point is beyond domain boundary (Alternatively, could
-           % have sidewalls steer flow (closed boundary) or make boundary open or periodic). 
-           
+           % have sidewalls steer flow (closed boundary) or make boundary open or periodic).
            if iNew<1 || iNew>grid.size(1) || jNew<1 || jNew==grid.size(2)
                 continuePropagateAvulsion = false;
            else
                 % update grid.flowsTo, grid.flowsFrom, grid.channelFlag using
                 % the information for the current and next cell in the avulsion path
-                indCurrent = sub2ind(grid.size,i,j);
-                indNew = sub2ind(grid.size,iNew,jNew);                    
                 grid.flowsTo{indCurrent} = [grid.flowsTo{indCurrent}; indNew];
                 grid.flowsFrom{indNew} = [grid.flowsFrom{indNew}; indCurrent];
                 grid.channelFlag(indNew) = true;
-                
+
                 % % check if the new cell intersects an existing channel or
                 % ocean cell or topographic sink; if it does,
                 % update flag to stop path construction. 
@@ -73,9 +72,8 @@
                    continuePropagateAvulsion = false;
                 else
                     % step forward by setting (i,j) to (iNew,jNew)
-                    i = iNew;
-                    j = jNew;
+                    indCurrent = indNew;
                 end
            end           
         end % end while loop for avulsion path construction 
-    end % end nested function propagateAvulsion        
+    end % end nested function propagateAvulsion

@@ -130,6 +130,9 @@ end
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for t = tStep_sec:tStep_sec:tMax_sec
         
+        % check that the network is valid (and repair/trim) what is not
+        grid=validateNetwork(grid,inlet);
+        
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance);
         
