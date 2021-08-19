@@ -16,7 +16,7 @@ addpath(genpath('source'))
 % we can load a checkpoint file and continue the model run
 % to load a checkpoint, use a string pointing to a .mat filename output
 % from a previous model run. To start a new run, use `false`.
-loadCheckpoint = false; 
+loadCheckpoint = false;
 
 rng(12)
 
@@ -121,13 +121,13 @@ end
 % handle loading the checkpoint, or creating the new output files
 if ischar(loadCheckpoint)
     % load from file the checkpoint
-    data = load('output/run5/run5_time_0.40_yr.mat');
+    data = load(loadCheckpoint);
     grid = data.grid;
     oceanLevel = data.oceanLevel;
     startingTime = data.t;
 else
-    % save initial grid^M
-    filename = fullfile(outputFolderPath,[runName,'_time_0.00.mat']);
+    % save initial grid
+    filename = fullfile(outputFolderPath,[runName,'_time_0.00_yr.mat']);
     save(filename,'grid','t')
     fprintf('Saved file %s\n',filename)
 
