@@ -1,4 +1,4 @@
-    function grid=propagateAvulsion(grid,iStart,jStart,forbiddenCells) % nested function
+    function grid=propagateAvulsion(grid,avulsionCellInd) % nested function
        % propagateAvulsion: creates path for avulsion channel.
         %%% Deviation from the Sun et al. (2002) model:
         %%% their approach is weighted toward a steepest
@@ -11,78 +11,125 @@
         %%% the path from the detected avulsion destination
         %%% point. 
         %%%
-        %%% To prevent single-cell loop formation during avulsion path
-        %%% selection, we use the input array `forbiddenCells` to ensure that
-        %%% the maximum slope direction is never the cell that flow is
-        %%% avulsed from. To do this, we set any cell indices in
-        %%% `forbiddenCells` equal to `NaN`, so that this index is not
-        %%% selected during path finding.
-       
-        % extract the initial point into shorthand i, j
-        i = iStart;
-        j = jStart;
-        indCurrent = sub2ind(grid.size, i, j);
-        
+        %%% To prevent single-cell loop and cross-over channel formation
+        %%% during avulsion path finding, we restrict flow to certain
+        %%% neighbor cells with the `forbiddenCells` array.
+
+        % the current index is the avulsion cell
+        indCurrent = avulsionCellInd;
+
+        % `indPrev` is used in the loop to ensure that flow never goes
+        % directly back to where it came from. However, to initialize the
+        % routing, we set the previous index as where the flow is already
+        % going, so that this location cannot be the location of the first
+        % step
+        indPrev = grid.flowsTo{avulsionCellInd}';
+
         % configure index stepper based on grid dimensions
         iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
                  +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
 
-        % while there is still non-ocean non-channel cells to walk
+        % while there is still non-ocean non-channel non-sink cells to walk
         continuePropagateAvulsion = true;
         while continuePropagateAvulsion
+            %% while we want to find the next step, find where *might* go
+
+            % update list of forbiddenCells
+            forbiddenCells = [avulsionCellInd, indPrev]; % previous location is forbidden
+
             % find the indices of the neighbors and get slopes to there
             nghbrs = indCurrent + iwalk;
             nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
                            grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
                            grid.S.SW(indCurrent) grid.S.W(indCurrent)];
-                       
+ 
             % add to the list of forbidden cells with the locations that would create crossover channels
-            [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, nghbrs, forbiddenCells);
-            
+            [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs);
+            forbiddenCells = unique([forbiddenCells, forbiddenCorners]);
+
+            % prevent the flow from going to any cell that it already
+            % receives flow from
+            forbiddenCells = unique([forbiddenCells, grid.flowsFrom{indCurrent}']);
+
+            % prevent the flow from going to any cell that is uphill
+            % ..............
+
             % adjust slope array for the forbiddenCells, changes to NaN
             matches = ismember(nghbrs, forbiddenCells);
             nghbrSlopes(matches) = NaN;
-            
+
             % do a safety check that some cell is finite
             % (choosable).
             if ~any(isfinite(nghbrSlopes))
                 error('all non-finite slopes encountered')
+                % we probably want to just break the loop here instead of
+                % error, that way the avulsion just doesn't happen, and the
+                % run can continue. Eventually an avulsion will happen
+                % somewhere else and abandon this channel anyway.
             end
-            
-            % now find the index of the next location to visit
-            [Smax,indSmax] = max(nghbrSlopes);
-    
-            % now take the step
+
+            % now find the index of the next location that we might visit
+            [~,indSmax] = max(nghbrSlopes);
+
+            %% take the step to determine what the new ind will be
             step = iwalk(indSmax);
             indNew = indCurrent + step;
             [iNew, jNew] = ind2sub(grid.size, indNew);
 
-           % Stop path construction if new point is beyond domain boundary (Alternatively, could
-           % have sidewalls steer flow (closed boundary) or make boundary open or periodic).
-           if iNew<1 || iNew>grid.size(1) || jNew<1 || jNew==grid.size(2)
-                continuePropagateAvulsion = false;
-           else
-                % update grid.flowsTo, grid.flowsFrom, grid.channelFlag using
-                % the information for the current and next cell in the avulsion path
-                grid.flowsTo{indCurrent} = [grid.flowsTo{indCurrent}; indNew];
-                grid.flowsFrom{indNew} = [grid.flowsFrom{indNew}; indCurrent];
-                grid.channelFlag(indNew) = true;
+            % make the connection to this new cell
+            grid.flowsTo{indCurrent} = [grid.flowsTo{indCurrent}; indNew]; % append new cell to the "flows to" list
+            grid.flowsFrom{indNew} = [grid.flowsFrom{indNew}; indCurrent]; % append source cell to "flows from" list
+            wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
+            grid.channelFlag(indNew) = true; % mark this cell as now being a channel
 
-                % % check if the new cell intersects an existing channel or
-                % ocean cell or topographic sink; if it does,
-                % update flag to stop path construction. 
-                if grid.channelFlag(indNew) || grid.oceanFlag(indNew) || grid.sinkFlag(indNew) 
-                   continuePropagateAvulsion = false;
-                else
-                    % step forward by setting (i,j) to (iNew,jNew)
-                    indCurrent = indNew;
-                end
-           end           
+            %% determine whether the new point is somewhere we want to continue from
+
+            % Stop path construction if new point is beyond domain boundary (Alternatively, could
+            % have sidewalls steer flow (closed boundary) or make boundary open or periodic).
+            if iNew<1 || iNew>grid.size(1) || jNew<1 || jNew==grid.size(2)
+
+                continuePropagateAvulsion = false;
+
+            % Stop path construction if new point was already marked as a
+            % channel. In this scenario, we don't want to do any avulsion path
+            % finding, the path is already determined.
+            elseif wasChannel
+
+                % end iteration of the while loop
+                continuePropagateAvulsion = false;
+
+            % Stop path construction if new point is an ocean cell. In this
+            % scenario, we have reached an outlet, so stop routing.
+            elseif grid.oceanFlag(indNew)
+
+                % end iteration of the while loop
+                continuePropagateAvulsion = false;
+
+            % Stop path construction if new point is a sink cell. In this
+            % scenario, we would only be able to go upslope to route of the
+            % sink, and we want to stop pathfinding
+            elseif grid.sinkFlag(indNew)
+
+                % end iteration of the while loop
+                continuePropagateAvulsion = false;
+
+            % Continue path construction is the new point is an ordinary
+            % land cell (non-ocean and non-channel cell)
+            else
+                % this is a land cell, so we need to find
+                % a pathways across the land
+
+                % make the currentInd this new step, to start over the
+                % while loop and search for the next step to take
+                indPrev = indCurrent;
+                indCurrent = indNew;
+            end
+
         end % end while loop for avulsion path construction 
     end % end nested function propagateAvulsion        
 
 
-function [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, nghbrs, forbiddenCells)
+function [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs)
     %checkNeighborsChannelsCrossover Prevent crossover channels.
     %
     % Prevent the formation of crossover channels by checking neighboring
@@ -114,7 +161,7 @@ function [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, ng
 
     % constraining cell pairs, starting from N-E pair
     pairs = [2, 4; 4, 6; 6, 8; 8, 2]; % N-E; E-S; S-W; W-N
-    corners = [1; 3; 5; 7]; % NW; NE; SE; SW
+    corners = [3; 5; 7; 1]; % NW; NE; SE; SW
 
     % option flag
     cornerOption = 'connected'; % 'connected' | 'present'
@@ -150,7 +197,4 @@ function [forbiddenCells] = checkNeighborsChannelsCrossover(grid, indCurrent, ng
     
     % convert the corners boolen to cell indices
     forbiddenCorners = nghbrs(corners(forbiddenCorners));
-
-    % anything that was forbidden or is a forbidden corner.
-    forbiddenCells = unique([forbiddenCorners, forbiddenCells]);
 end

@@ -165,12 +165,12 @@ end
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
-        newAvulsions = avulsionCheck(grid,beta);
+        avulsionCellInds = avulsionCheck(grid,beta);
         
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths
-        if ~isempty(newAvulsions.rNew)   
-            grid = enactAvulsions(newAvulsions,grid,inlet);
+        if ~isempty(avulsionCellInds)   
+            grid = enactAvulsions(avulsionCellInds,grid,inlet);
         end
         
         % episodically save model output

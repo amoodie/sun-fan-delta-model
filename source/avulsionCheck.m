@@ -1,19 +1,15 @@
-function newAvulsions = avulsionCheck(grid,beta)
-% avulsionCheck.m: Identifies new avulsion sites. For each channel cell, look up the local bed 
-% elevation, channel depth, and downstream slope. Compare to elevation for
-% neighboring cells and distance to those cells. Flag for avulsion
-% if criterion is met. I imposed an additional constraint that a
-% cell can only flow into 2 additional cells, so if the number of cells indicated grid.flowsTo is
-% already 2 or more, no new avulsions can be made.
+function avulsionCellInds = avulsionCheck(grid,beta)
+% avulsionCheck.m: Identifies new avulsion sites. For each channel cell,
+% look up the local bed elevation, channel depth, and downstream slope.
+% Compare to elevation for neighboring cells and distance to those cells.
+% Flag for avulsion if criterion is met. An additional constraint is
+% that a cell can only flow into 2 additional cells, so if the number of
+% cells indicated grid.flowsTo is already 2 or more, no new avulsions can
+% be made. This is different from the Sun et al. (2002) model.
 
-% initialize structure array to store row and column coordinates for new avulsion cells
-newAvulsions.rSource = []; 
-newAvulsions.cSource = [];
-newAvulsions.indSource = [];
-newAvulsions.rNew = [];
-newAvulsions.cNew = [];
-newAvulsions.indNew = [];
-        
+% initialize an array to store the cell indices where avulsion should happen
+avulsionCellInds = [];
+
     % Check for new avulsions at each channel cell
     for k=1:numel(grid.channelFlag)
         if grid.channelFlag(k) && numel(grid.flowsTo{k})<2 % i.e., if it's a channel cell and flows to no more than 1 cell, then eligible for a new avulsion
@@ -51,16 +47,8 @@ newAvulsions.indNew = [];
             end
 
             if any(avulsionSusceptibilityIndex > S_ij) % equation 13
-                % select the neighboring cell with the greatest avulsion
-                % susceptibility 
-                [~,neighborAvulsionSelect] = max(avulsionSusceptibilityIndex);
-                newAvulsions.rNew = [newAvulsions.rNew; rowSearch(neighborAvulsionSelect)];
-                newAvulsions.cNew = [newAvulsions.cNew; colSearch(neighborAvulsionSelect)];
-                indNew = sub2ind(grid.size,rowSearch(neighborAvulsionSelect),colSearch(neighborAvulsionSelect));
-                newAvulsions.indNew = [newAvulsions.indNew; indNew];
-                newAvulsions.rSource = [newAvulsions.rSource; currentRow];
-                newAvulsions.cSource = [newAvulsions.cSource; currentCol];
-                newAvulsions.indSource = [newAvulsions.indSource; k];
+                % flag this cell for an avulsion
+                avulsionCellInds = [avulsionCellInds; k];
             end
         end
     end
