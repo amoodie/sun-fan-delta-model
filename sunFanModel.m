@@ -13,6 +13,11 @@ dbstop if error
 % add the model source folder to the path
 addpath(genpath('source'))
 
+% we can load a checkpoint file and continue the model run
+% to load a checkpoint, use a string pointing to a .mat filename output
+% from a previous model run. To start a new run, use `false`.
+loadCheckpoint = false;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
 runName = 'run1'; % base name for run and file output
@@ -97,6 +102,7 @@ grid.channelFlag(inlet.row,inlet.col) = true;
 grid.deltaz = zeros(grid.size); % change in elev per time
 
 tStep_sec = tStep_yr*pi*1e7;
+startingTime = tStep_sec;
 tMax_sec = tMax_yr*pi*1e7;
 
 % set up an output folder for this run
@@ -110,14 +116,23 @@ else
     end
 end
 
-% save initial grid
-filename = fullfile(outputFolderPath,[runName,'_time_0.mat']);
-save(filename,'grid','t')
-fprintf('Saved file %s\n',filename)
+% handle loading the checkpoint, or creating the new output files
+if ischar(loadCheckpoint)
+    % load from file the checkpoint
+    data = load(loadCheckpoint);
+    grid = data.grid;
+    oceanLevel = data.oceanLevel;
+    startingTime = data.t;
+else
+    % save initial grid
+    filename = fullfile(outputFolderPath,[runName,'_time_0.00_yr.mat']);
+    save(filename,'grid','t')
+    fprintf('Saved file %s\n',filename)
 
-% save model parameters (all the variables so far) to file
-filename = fullfile(outputFolderPath,[runName,'_parameters.mat']);
-save(filename)
+    % save model parameters (all the variables so far) to file
+    filename = fullfile(outputFolderPath,[runName,'_parameters.mat']);
+    save(filename)
+end
 
 % show a debugging figure?
 % this is computationally expensive, so only use to debug
@@ -128,14 +143,15 @@ if debugFigure
 end
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    for t = tStep_sec:tStep_sec:tMax_sec
+iter = 0;
+    for t = startingTime:tStep_sec:tMax_sec
         
         % check that the network is valid (and repair/trim) what is not
         grid=validateNetwork(grid,inlet);
-        
+
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance);
-        
+
         % look up slope along flow paths
         grid=slopeAlongFlow(grid); % updates field grid.S.alongFlow
         
@@ -181,5 +197,6 @@ end
            tElapsedSinceSave_yr = 0; % reset elapsed time since save 
            fprintf('Saved file %s\n',filename)
         end
+        iter = iter + 1;
     end % end time loop
 end % end function sunFanModel
