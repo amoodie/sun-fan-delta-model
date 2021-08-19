@@ -38,8 +38,12 @@ avulsionCellInds = [];
             L_ik = grid.dx*[sqrt(2) 1 sqrt(2) 1 sqrt(2) 1 sqrt(2) 1]; % distance from starting cell to search cell
             avulsionSusceptibilityIndex = nan(1,8); % NaN rather than 0 so that "0" doesn't accidentally become a maximum
             for l=1:numel(rowSearch)
-                if rowSearch(l) < 1 || rowSearch(l) > grid.size(1) || colSearch(l)<1 || colSearch(l) > grid.size(2) || grid.channelFlag(rowSearch(l),colSearch(l))
-                    continue % if search cell is already a channel cell or is off the grid then cannot avulse to there. Therefore, leave avulsion susceptibility index as NaN for this cell and continue to next loop iteration.
+                if rowSearch(l) < 1 || rowSearch(l) > grid.size(1) || colSearch(l)<1 || colSearch(l) > grid.size(2)
+                    % if search cell is off the grid then cannot avulse to
+                    % there. Therefore, leave avulsion susceptibility index
+                    % as NaN for this cell and continue to next loop
+                    % iteration.
+                    continue
                 else
                     z_k = grid.z(rowSearch(l),colSearch(l));
                     avulsionSusceptibilityIndex(l) = ((z_i-beta*H_ij) - z_k)/L_ik(l); % equation 13 LHS
