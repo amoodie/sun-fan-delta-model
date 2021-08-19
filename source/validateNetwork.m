@@ -30,7 +30,7 @@ function [grid] = validateNetwork(grid,inlet)
     % any branches are encountered.
     doTrim = true; % whether to actually trim (or just search)
     [grid, ~] = walkToNodeSearchForLoops(grid, startInd, prevIndList, doTrim);
-    
+
 end
 
 function [grid, trimFlag] = walkToNodeSearchForLoops(grid, startInd, prevIndList, doTrim)
@@ -178,7 +178,8 @@ function [grid] = trimOutLoop(grid, nextInd, prevIndList)
                 % we recursively walk down this path to unmark it
                 startIndex = thisPathInd; % the head of the path to abandon
                 prevIndex = checkInd; % the branching cell
-                [grid] = unmarkChannelToNode(grid, startIndex, prevIndex);
+                abandonAll = true; % whether another channel stops abandonment or not
+                [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll);
 
                 % now we can exit the for loop
                 trimmed = true;
@@ -190,19 +191,30 @@ function [grid] = trimOutLoop(grid, nextInd, prevIndList)
     % if trimmed is false, we did not find a thing to trim, need to debug
     if ~trimmed
         % no trimmable loop was found at a branch, so we just trim 
-        % everything downstream of the looped cell index.
+        % everything downstream of the looped cell index (make the looped
+        % index the new outlet).
 
         % find the index of the nextInd in the prevIndexList
         whr = find(nextInd == prevIndList,1);
 
-        % unset the flow to/from this location
+        % find the pathway head down from nextInd
+        head = min([whr+1; length(prevIndList)]);
+
+        % unset the flowsTo beyond the location
         grid.flowsTo{nextInd} = [];
         grid.flowsToFrac_Qw_distributed{nextInd} = [];
 
-        % find the pathway head
-        head = min([whr+1; length(prevIndList)]);
+        % break the other end of the connection, into the looped cell
+        grid.flowsTo{prevIndList(end)} = [];
+        keepidx = (grid.flowsFrom{nextInd} ~= prevIndList(end));
+        grid.flowsFrom{nextInd} = grid.flowsFrom{nextInd}(keepidx);
+
+        % pick the head and looped cell at points and start unmarking.
+        % note: abandonAll is set to true, so anything encountered will be
+        % abandoned.
         startIndex = prevIndList(head); % the head of the path to abandon
         prevIndex = nextInd; % the branching cell
-        [grid] = unmarkChannelToNode(grid, startIndex, prevIndex);
+        abandonAll = true;
+        [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll);
     end
 end
