@@ -18,12 +18,10 @@ addpath(genpath('source'))
 % from a previous model run. To start a new run, use `false`.
 loadCheckpoint = false;
 
-rng(12)
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Set model parameters 
 runName = 'run1'; % base name for run and file output
-clobber = true; % whether to overwrite output folder if exists
+clobber = false; % whether to overwrite output folder if exists
 
 % Dimensionless parameters (from Table 1)
 alpha_so = 11.25;
