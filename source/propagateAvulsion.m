@@ -52,7 +52,7 @@
             forbiddenCells = unique([forbiddenCells, grid.flowsFrom{indCurrent}']);
 
             % prevent the flow from going to any cell that is uphill
-            % ..............
+            nghbrSlopes(nghbrSlopes < 0) = NaN;
 
             % adjust slope array for the forbiddenCells, changes to NaN
             matches = ismember(nghbrs, forbiddenCells);
@@ -61,11 +61,13 @@
             % do a safety check that some cell is finite
             % (choosable).
             if ~any(isfinite(nghbrSlopes))
-                error('all non-finite slopes encountered')
-                % we probably want to just break the loop here instead of
-                % error, that way the avulsion just doesn't happen, and the
-                % run can continue. Eventually an avulsion will happen
-                % somewhere else and abandon this channel anyway.
+                % break the while loop here instead of jsut setting route
+                % to false, so that the *step is not taken*, i.e., no
+                % avulsion is possible. In this scenario, the avulsion just
+                % doesn't happen and the run can continue. Eventually an
+                % avulsion will happen somewhere else and abandon this
+                % pathway.
+                break
             end
 
             % now find the index of the next location that we might visit
