@@ -59,7 +59,8 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 % note: this has to be recursive, because we may encounter branches
                 % along the abandoned pathway and we need to clear each of
                 % these pathways.
-                [grid] = unmarkChannelToNode(grid, startIndex, prevIndex);
+                abandonAll = false; % whether another channel stops abandonment or not
+                [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll);
 
                 % we removed one pathway (the jth pathway) of this branch
                 % (the ith branch), so we don't want to check the other
