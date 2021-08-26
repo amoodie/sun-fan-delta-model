@@ -10,6 +10,7 @@ loadCheckpoint = false;  % false | filename
 %%% Start of parameters to edit
 runName = 'run1'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
+codeDir = 'C:\Users\Ajay\Dropbox\work\active\development\Mars\Hypanis\sun-fan-delta-model\';
 
 % Dimensionless parameters specified in the paper
 alpha_so = 11.25; % from Table 1
@@ -80,6 +81,9 @@ debugFigure = false;
 
 % add the model source folder to the path
 addpath(genpath('..\source'))
+
+% define name for output directory
+outputDir = fullfile(codeDir,'output',runName);
 
 % adjust time parameters for use in model execution
 tMax_yr = tStep_yr*ceil(tMax_yr/tStep_yr);% adjust tMax so that the value is reached in an integer number of time steps
