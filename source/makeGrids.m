@@ -2,7 +2,7 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
     % makeGrids: generates elevation and other grids.   
      
         grid.xVec = 0:grid.dx:grid.xExtent; % vector of x-coordinates of grid, m
-        grid.yVec = 0:grid.dx:grid.yExtent';% vector y-coordiantes of grid, m
+        grid.yVec = (grid.yExtent:-grid.dx:0)';% vector y-coordiantes of grid, m
         [grid.x,grid.y] = meshgrid(grid.xVec,grid.yVec); % makes 2D arrays of x- and y- coordinates of grid, m
         grid.size = size(grid.x);
         
