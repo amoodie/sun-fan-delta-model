@@ -38,5 +38,6 @@ if ~isstruct(parameters.inlet), error(msg); end
 if ~ischar(parameters.boundaryCondition), error(msg); end
 if ~islogical(parameters.debugFigure), error(msg); end
 if ~islogical(parameters.loadCheckpoint) && ~ischar(parameters.loadCheckpoint), error(msg); end
+if ~ischar(parameters.outputDir), error(msg); end
 
 end

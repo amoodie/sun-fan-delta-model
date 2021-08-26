@@ -47,21 +47,21 @@ inlet = parameters.inlet;
 boundaryCondition = parameters.boundaryCondition;
 debugFigure = parameters.debugFigure;
 loadCheckpoint = parameters.loadCheckpoint;
+outputDir = parameters.outputDir;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % set up an output folder for this run
-outputFolderPath = fullfile('output',runName);
-if ~exist(outputFolderPath,'dir')
-       mkdir(outputFolderPath)
+if ~exist(outputDir,'dir')
+       mkdir(outputDir)
 else
     % error if clobber is set to false, so not to overwrite runs
     if ~clobber
-        error('Output folder already exists and clobber is false')
+        error('Output directory already exists and clobber is false')
     end
 end
 
 % save parameters to file
-filename = fullfile(outputFolderPath,[runName,'_parameters.mat']);
+filename = fullfile(outputDir,[runName,'_parameters.mat']);
 save(filename,'parameters')
 
 % Create grid for elevation and cell connectedness, and grids of flags for channel cells, ocean cells
@@ -86,7 +86,7 @@ if ischar(loadCheckpoint)
     clear data
 else
     % save initial grid
-    filename = fullfile(outputFolderPath,[runName,'_time_0.00_yr.mat']);
+    filename = fullfile(outputDir,[runName,'_time_0.00_yr.mat']);
     save(filename,'grid','t')
     fprintf('Saved file %s\n',filename)
 end
@@ -147,7 +147,7 @@ iter = 0;
         % episodically save model output
         tElapsedSinceSave_yr = tElapsedSinceSave_yr + tStep_sec/(secondsPerYear);
         if tElapsedSinceSave_yr >= tSaveInterval_yr || t == tMax_yr
-           filename = fullfile(outputFolderPath,[runName,'_time_',num2str(t/(secondsPerYear),'%4.2f'),'_yr.mat']);
+           filename = fullfile(outputDir,[runName,'_time_',num2str(t/(secondsPerYear),'%4.2f'),'_yr.mat']);
            save(filename,'grid','t','oceanLevel')
            tElapsedSinceSave_yr = 0; % reset elapsed time since save 
            fprintf('Saved file %s\n',filename)
