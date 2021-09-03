@@ -7,7 +7,7 @@ addpath ..\functions
 
 % % Run 1
 options.runName = 'run1';
-options.setMinElevZero = true; % uses minimum elevation in the set of DEMs to define zero
+options.setMinElevZero = false; % uses minimum elevation in the set of DEMs to define zero
 options.movieFrameRate = 2; % frames per second for movie
 options.movieFrameWidth = 24; % cm
 options.movieFrameHeight = 8; % cm

@@ -128,7 +128,8 @@ iter = 0;
         grid = updateSlope(grid,boundaryCondition,t); 
 
         % update grid.oceanFlag following topography update
-        grid.oceanFlag = grid.z <= oceanLevel;
+        indOceanLevel = find(t>=oceanLevel.timeStart_yr,1,'last');
+        grid.oceanFlag = grid.z <= oceanLevel.z(indOceanLevel);
         
         % check that any channels that are receiving flow below threshold
         % are disconnected from the network
@@ -148,7 +149,7 @@ iter = 0;
         tElapsedSinceSave_yr = tElapsedSinceSave_yr + tStep_sec/(secondsPerYear);
         if tElapsedSinceSave_yr >= tSaveInterval_yr || t == tMax_yr
            filename = fullfile(outputDir,[runName,'_time_',num2str(t/(secondsPerYear),'%4.2f'),'_yr.mat']);
-           save(filename,'grid','t','oceanLevel')
+           save(filename,'grid','t')
            tElapsedSinceSave_yr = 0; % reset elapsed time since save 
            fprintf('Saved file %s\n',filename)
         end

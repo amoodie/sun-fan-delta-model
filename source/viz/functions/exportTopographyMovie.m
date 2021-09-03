@@ -1,8 +1,6 @@
 function exportTopographyMovie(options)
 % exportTopographyMovie.m: function that takes input data from the 
 % Sun et al. (2002) fan-delta model and exports a movie of the topography.
-% Created July 10, 2021 by Ajay B. Limaye, University of Virginia (ajay@virginia.edu).
-% Last edited August 24, 2021 by Ajay B. Limaye (ajay@virginia.edu).
 
 fprintf('Starting movie export for %s ...\n',options.movieFilename)
 
@@ -30,6 +28,10 @@ for i=1:numel(timesWithData_yr)
     dem.timeseries(i).z = grid.z;
     dem.timeseries(i).t = timesWithData_yr(i);
     dem.timeseries(i).hs = hillshade(dem.x,dem.y,dem.timeseries(i).z);
+    
+    % look up ocean level at this time
+    indOceanLevel = find(dem.timeseries(i).t >=oceanLevel.timeStart_yr,1,'last');
+    dem.timeseries(i).oceanLevel.z = oceanLevel.z(indOceanLevel);
 end
 clear grid
 
@@ -48,8 +50,8 @@ set(h,'color','k')
 if options.setMinElevZero
     % Determine minimum elevation across timesteps
     minElevAll = Inf;
-    for j=1:numel(dem.timeseries)
-        elevs = dem.timeseries(j).z(:);
+    for i=1:numel(dem.timeseries)
+        elevs = dem.timeseries(i).z(:);
         minElev = min(elevs);
         if minElev<minElevAll
             minElevAll=minElev;
@@ -57,19 +59,19 @@ if options.setMinElevZero
     end
         
     % subtract minimum elevation (across all DEMs) from all DEMs to zero out
-    for j=1:numel(dem.timeseries)
-        dem.timeseries(j).z = dem.timeseries(j).z-minElevAll;
+    for i=1:numel(dem.timeseries)
+        dem.timeseries(i).oceanLevel.z = dem.timeseries(i).oceanLevel.z-minElevAll;
     end
     % Apply same offset to ocean level
-    oceanLevel = oceanLevel - minElevAll;
+    dem.timeseries(i).oceanLevel.z = dem.timeseries(i).oceanLevel.z - minElevAll;
 end
 
 % identify range of elevations across timesteps so can fix z-axis
 % limits.
 minElevAll = Inf;
 maxElevAll = -Inf;
-for j=1:numel(dem.timeseries)
-    elevs = dem.timeseries(j).z(:);
+for i=1:numel(dem.timeseries)
+    elevs = dem.timeseries(i).z(:);
     minElev = min(elevs);
     if minElev<minElevAll
         minElevAll=minElev;
@@ -95,10 +97,10 @@ for i = 1:numel(dem.timeseries)
     shading flat
     colormap gray
     
-    if ~isnan(oceanLevel)
+    if ~isnan(dem.timeseries(i).oceanLevel.z)
         % Plot ocean so that it extends way from surface
-        oceanSurf = oceanLevel*ones(size(dem.x)); 
-        oceanSurf(dem.timeseries(i).z> oceanLevel) = NaN;
+        oceanSurf = dem.timeseries(i).oceanLevel.z*ones(size(dem.x)); 
+        oceanSurf(dem.timeseries(i).z> dem.timeseries(i).oceanLevel.z) = NaN;
         hold on, s2=surf(dem.x/1000,dem.y/1000,oceanSurf,'facecolor',[0 0 1],'facealpha',0.75,'edgecolor','none');
         % restore caxis for hillshade surface
         caxis(cax)
@@ -128,10 +130,11 @@ for i = 1:numel(dem.timeseries)
     profile.d = [0;cumsum(sqrt(sum(diff([profile.x(:),profile.y(:)],1,1).^2,2)))]; % profile distance
     
     % Create a version of elevation profile with NaN where profile falls below ocean level
-    ind =  profile.z < oceanLevel;
+    ind =  profile.z < dem.timeseries(i).oceanLevel.z;
     profile.zClipOcean = profile.z;
     profile.zClipOcean(ind) = NaN;
-    hold on, plot3(profile.x/1000,profile.y/1000,profile.zClipOcean,'r-','linewidth',2)
+    %hold on, plot3(profile.x/1000,profile.y/1000,profile.zClipOcean,'r-','linewidth',2)
+    hold on, plot3(profile.x/1000,profile.y/1000,profile.z,'r-','linewidth',2)
     
     % create ghost handles for legend
     hold on, gh1(1) = plot(NaN,NaN,'linewidth',2,'color','r');
@@ -140,7 +143,7 @@ for i = 1:numel(dem.timeseries)
     hold on, gh1(3) = patch(NaN,NaN,'k');
     set(gh1(3),'facecolor','b','edgecolor','w','facealpha',0.75)
     
-    if ~isnan(oceanLevel)
+    if ~isnan(dem.timeseries(i).oceanLevel.z)
         legend(gh1(1:3),'\color{white}Profile','\color{white}Surface','\color{white}Standing water',...
             'Location','northeast','color',[0 0 0],'edgecolor',[0 0 0])
     else
@@ -176,25 +179,35 @@ for i = 1:numel(dem.timeseries)
     clear gh1 % clears a figure handle
     if i==1    
         profile.z_initial = interp2(dem.x,dem.y,dem.timeseries(1).z,profile.x,profile.y,'bilinear');
-   %     profile.z_initial(profile.z_initial<oceanLevel) = NaN; 
+   %     profile.z_initial(profile.z_initial<dem.timeseries(i).oceanLevel.z) = NaN; 
     end
     
    plot(profile.d/1000,profile.z_initial,'-','linewidth',1,'color','w'); 
-   hold on, plot(profile.d/1000,profile.zClipOcean,'r-','linewidth',1)
+   %hold on, plot(profile.d/1000,profile.zClipOcean,'r-','linewidth',1)
+   hold on, plot(profile.d/1000,profile.z,'r-','linewidth',1)
+   
    
    bufferY = 0.1; % buffer for y-axis limits
-    if ~isnan(oceanLevel)
+    if ~isnan(dem.timeseries(i).oceanLevel.z)
         % - line plot of ocean level. Clip to intersection point with surface
         % profile.
-        [~,~,io,~] = intersections(profile.d,oceanLevel*ones(size(profile.d)),profile.d,profile.z);
-        if isempty(io) % i.e., no intersections - everything is submerged
-            oceanPatch.d = profile.d([1:end,end:-1:1]);
-            oceanPatch.z = [oceanLevel*ones(size(profile.d));profile.z(end:-1:1)];
+        [~,~,io,~] = intersections(profile.d,dem.timeseries(i).oceanLevel.z*ones(size(profile.d)),profile.d,profile.z);
+        if isempty(io) % i.e., no intersections  
+            if all(profile.z<dem.timeseries(i).oceanLevel.z) % all topography is submerged
+                oceanPatch.d = profile.d([1:end,end:-1:1]);
+                oceanPatch.z = [dem.timeseries(i).oceanLevel.z*ones(size(profile.d));profile.z(end:-1:1)];
+            elseif all(profile.z>dem.timeseries(i).oceanLevel.z)
+                % Set ocean patch coordinates to empty as all topography is
+                % subaerial
+                 oceanPatch.d = [];
+                 oceanPatch.z = [];
+            end 
         else
             io = round(io);
             oceanPatch.d = [profile.d(io:end);profile.d(end:-1:io)];
-            oceanPatch.z = [oceanLevel*ones(size(profile.d(io:end)));profile.z(end:-1:io)];
+            oceanPatch.z = [dem.timeseries(i).oceanLevel.z*ones(size(profile.d(io:end)));profile.z(end:-1:io)];
         end
+        
         p = patch(oceanPatch.d/1000,oceanPatch.z,'k');
         set(p,'facecolor','b','edgecolor','none','facealpha',0.75)
     end
@@ -213,7 +226,7 @@ for i = 1:numel(dem.timeseries)
     hold on, gh(3) = patch(NaN,NaN,'k');
     set(gh(3),'facecolor','b','edgecolor','w','facealpha',0.75)
     
-    if ~isnan(oceanLevel)
+    if ~isnan(dem.timeseries(i).oceanLevel.z)
         legend(gh(1:3),'\color{white} Profile','\color{white} Original profile','\color{white} Standing water',...
             'Location','northeast','color',[0 0 0],'edgecolor',[0 0 0])
     else
