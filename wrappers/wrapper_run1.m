@@ -70,7 +70,8 @@ tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 inlet.row = 1; % set inlet point for water and sediment
 inlet.col = 50;
 boundaryCondition = 'closed';
-oceanLevel = 0.01; % elevation of ponded water, m (xi_theta in the paper)
+oceanLevel.timeStart_yr = linspace(0,tMax_yr,10); % times that define start of intervals with a particular ocean level
+oceanLevel.z = linspace(1,0,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.

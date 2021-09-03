@@ -24,7 +24,10 @@ if ~isnumeric(parameters.Qs_inlet),error(msg); end
 if ~isnumeric(parameters.Qw_threshold),error(msg); end
 if ~isnumeric(parameters.Qw_mismatch_tolerance),error(msg); end
 if ~isnumeric(parameters.D),error(msg); end
-if ~isnumeric(parameters.oceanLevel),error(msg); end
+if ~isstruct(parameters.oceanLevel),error(msg); end
+if ne(numel(parameters.oceanLevel.timeStart_yr),numel(parameters.oceanLevel.z))
+    error('In oceanLevel, fields timeStart_yr and z must have the same number of elements');
+end
 if ~isstruct(parameters.grid), error(msg); end
 if ~isnumeric(parameters.t), error(msg); end
 if ~isnumeric(parameters.tStep_sec), error(msg); end

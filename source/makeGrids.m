@@ -50,7 +50,7 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
         grid.flowsFrom = cell(grid.size);
         
         % create grids to flag other attributes
-        grid.oceanFlag = grid.z<=oceanLevel; % flag to identify whether a cell is in the ocean. Eventually this can be a check at each time step. 
+        grid.oceanFlag = grid.z<=oceanLevel.z(1); % flag to identify whether a cell is in the ocean, using initial ocean level.
         grid.channelFlag = false(grid.size); % flag to identify whether a cell is part of a channel
     end
     

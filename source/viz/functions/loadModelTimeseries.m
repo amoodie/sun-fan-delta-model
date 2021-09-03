@@ -7,6 +7,7 @@ tSaveInterval_yr = parameters.tSaveInterval_yr;
 tMax_yr = parameters.tMax_yr;
 timesWithData = 0:tSaveInterval_yr:tMax_yr;
 runName = parameters.runName;
+oceanLevel = parameters.oceanLevel;
 
 % Load timeseries of DEMs and store in a structure array,
 % dem.timeseries
@@ -24,6 +25,10 @@ for i=1:numel(timesWithData)
     dem.timeseries(i).z = grid.z;
     dem.timeseries(i).t = timesWithData(i);
     dem.timeseries(i).depositThickness = grid.z - z_initial;
+    
+    % look up ocean level at this time
+    indOceanLevel = find( dem.timeseries(i).t >=oceanLevel.timeStart_yr,1,'last');
+    dem.timeseries(i).oceanLevel.z = oceanLevel.z(indOceanLevel);
 end
 
 % get maximum deposit thickenss for the timesieres, which is used to set
