@@ -128,7 +128,8 @@ iter = 0;
         grid = updateSlope(grid,boundaryCondition,t); 
 
         % update grid.oceanFlag following topography update
-        indOceanLevel = find(t>=oceanLevel.timeStart_yr,1,'last');
+        t_yr = t / secondsPerYear;
+        indOceanLevel = find(t_yr>=oceanLevel.timeStart_yr,1,'last');
         grid.oceanFlag = grid.z <= oceanLevel.z(indOceanLevel);
         
         % check that any channels that are receiving flow below threshold
