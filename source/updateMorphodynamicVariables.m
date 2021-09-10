@@ -11,7 +11,7 @@ function grid = updateMorphodynamicVariables(grid,alpha_b,alpha_r,alpha_sa,alpha
     % simulataneously for all cells on the grid.
 
     % slope is defined as positive downhill.
-    grid.B = (alpha_b^(-(3+2*p)/2))*(alpha_r^-1)*(grid.S.alongFlow.^(1+p))*((grid.Qw/(sqrt(g*D)*D^2)))*D; % width
+    grid.B = (alpha_b^(-(3+2*p)/2)).*(alpha_r^-1).*(grid.S.alongFlow.^(1+p)).*((grid.Qw/(sqrt(g*D)*D^2))).*D; % width
     grid.H = (alpha_b./grid.S.alongFlow)*D; % depth
     % Note that given these dependencies on slope, both depth and width
     % can come out with non-physical values (i.e., negative or zero).
