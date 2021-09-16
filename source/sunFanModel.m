@@ -73,6 +73,7 @@ grid = updateSlope(grid,boundaryCondition,t);
 
 % flag grid cell with inlet as a channel cell
 grid.channelFlag(inlet.row,inlet.col) = true;
+grid.inletCell = sub2ind(size(grid.x),inlet.row,inlet.col);
 
 % create grid to track elevation change in the last time step
 grid.deltaz = zeros(grid.size); 

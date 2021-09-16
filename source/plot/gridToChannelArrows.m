@@ -14,7 +14,7 @@ function gridToChannelArrows(grid, varargin)
     
     visitedCells = false(grid.size);
     
-    channelStartIndices = [4950]; % start the walk from the inlet
+    channelStartIndices = grid.inletCell; % start the walk from the inlet
 
     
     [iStart, jStart] = ind2sub(grid.size, channelStartIndices(1));
