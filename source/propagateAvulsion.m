@@ -17,12 +17,6 @@
 
         % the current index is the avulsion cell
         indCurrent = avulsionCellInd;
-        
-        % The discharge at the branching cell.
-        % After choosing the first step we will compute the approx
-        % discharge partitioning at this new branch, and then use the
-        % discharge down the new path to determine a critical stress for
-        % stopping routing flow.
 
         % `indPrev` is used in the loop to ensure that flow never goes
         % directly back to where it came from. However, to initialize the
