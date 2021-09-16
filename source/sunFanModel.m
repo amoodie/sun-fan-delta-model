@@ -94,12 +94,9 @@ end
 
 % create a debugging figure if specified
 if debugFigure
-    debugFigureUpdateTime = tStep_sec * 10; % how often to update
+    debugFigureUpdateTime = tStep_sec * 100; % how often to update
     debugFig = figure('Position', [10 10 900 600]);
 end
-
-% grid.flowsTo{4950} = [4951];
-% grid.flowsFrom{4951} = [4950];
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 iter = 0;
@@ -148,7 +145,7 @@ iter = 0;
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths
         if ~isempty(avulsionCellInds)   
-            grid = enactAvulsions(avulsionCellInds,grid,inlet,gamma,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p);
+            grid = enactAvulsions(avulsionCellInds,grid,inlet);
         end
         
         % episodically save model output

@@ -1,4 +1,4 @@
-    function grid=propagateAvulsion(grid,avulsionCellInd,gamma,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p) % nested function
+    function grid=propagateAvulsion(grid,avulsionCellInd) % nested function
        % propagateAvulsion: creates path for avulsion channel.
         %%% Deviation from the Sun et al. (2002) model:
         %%% their approach is weighted toward a steepest
@@ -37,7 +37,6 @@
 
         % while there is still non-ocean non-channel non-sink cells to walk
         continuePropagateAvulsion = true;
-        partition = true; % need to compute partition on first iter
         while continuePropagateAvulsion
             %% while we want to find the next step, find where *might* go
 
@@ -90,42 +89,8 @@
             grid.flowsFrom{indNew} = [grid.flowsFrom{indNew}; indCurrent]; % append source cell to "flows from" list
             wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
             grid.channelFlag(indNew) = true; % mark this cell as now being a channel
-            
-            % if this is the first step, determine the flow partitioning
-            if partition
-                [source.row,source.col] = ind2sub(grid.size,indCurrent); % the branching cell
-                source.ind = indCurrent;
-                Qw_routed = grid.Qw(source.ind); % discharge at the branching cell
-                cellsIndFlowsTo = [indPrev,indNew]; % the two branch cells
-                if numel(cellsIndFlowsTo) < 2
-                    % this is not a branch (first inlet step?, t=0)?
-                    branchDischarge = Qw_routed;
-                else
-                    grid.Qw_toRoute(source.ind) = Qw_routed;
-                    [~, branch2] = computeBranchDischargePartitioning(grid,source,cellsIndFlowsTo,Qw_routed,gamma);
-                    branchDischarge = branch2.Qw_received;
-                end
-                gridTemp = grid; % make a copy to modify with widths and depths for routing estimates
-                partition = false;
-            end
 
             %% determine whether the new point is somewhere we want to continue from
-            
-            % make an estimate of the width and depth of flow to determine
-            % shear stress. Stress below critical may be a stopping point
-            % for routing flow.
-            dz = -(gridTemp.z(indNew)-gridTemp.z(indCurrent));
-            [indCurrentRow,indCurrentCol] = ind2sub(grid.size,indCurrent); % current
-            [indNewRow,indNewCol] = ind2sub(grid.size,indNew); % new
-            dL = gridTemp.dx*sqrt((indCurrentRow-indNewRow)^2+(indCurrentCol-indNewCol)^2);
-            gridTemp.S.alongFlow(indNew) = dz/dL;
-            gridTemp.Qw(indNew) = branchDischarge;
-            gridTemp = updateMorphodynamicVariables(gridTemp,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p,true);
-            gridTemp.B(indNew)
-            gridTemp.H(indNew)
-            if gridTemp.H(indNew) < 2e-1
-                keyboard
-            end
 
             % Stop path construction if new point is beyond domain boundary (Alternatively, could
             % have sidewalls steer flow (closed boundary) or make boundary open or periodic).
