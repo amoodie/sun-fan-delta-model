@@ -31,6 +31,7 @@ beta = parameters.beta;
 Qw_inlet = parameters.Qw_inlet;
 Qs_inlet = parameters.Qs_inlet;
 Qw_threshold = parameters.Qw_threshold;
+Qs_threshold = parameters.Qs_threshold;
 Qw_mismatch_tolerance = parameters.Qw_mismatch_tolerance; 
 D = parameters.D; 
 oceanLevel = parameters.oceanLevel;
@@ -97,6 +98,9 @@ if debugFigure
     debugFig = figure('Position', [10 10 900 600]);
 end
 
+% grid.flowsTo{4950} = [4951];
+% grid.flowsFrom{4951} = [4950];
+
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 iter = 0;
     for t = startingTime:tStep_sec:tMax_sec
@@ -112,7 +116,7 @@ iter = 0;
         
         % update morphodynamic variables for each cell in the grid
         % (channel width, chanenl depth and sediment flux)
-        grid = updateMorphodynamicVariables(grid,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p);
+        grid = updateMorphodynamicVariables(grid,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p,false);
         
         % update the debugging figure
         if debugFigure
@@ -130,7 +134,8 @@ iter = 0;
         % update grid.oceanFlag following topography update
         t_yr = t / secondsPerYear;
         indOceanLevel = find(t_yr>=oceanLevel.timeStart_yr,1,'last');
-        grid.oceanFlag = grid.z <= oceanLevel.z(indOceanLevel);
+        grid.oceanLevel = oceanLevel.z(indOceanLevel);
+        grid.oceanFlag = grid.z <= grid.oceanLevel;
         
         % check that any channels that are receiving flow below threshold
         % are disconnected from the network
@@ -138,12 +143,12 @@ iter = 0;
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
-        avulsionCellInds = avulsionCheck(grid,beta);
+        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold);
         
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths
         if ~isempty(avulsionCellInds)   
-            grid = enactAvulsions(avulsionCellInds,grid,inlet);
+            grid = enactAvulsions(avulsionCellInds,grid,inlet,gamma,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p);
         end
         
         % episodically save model output

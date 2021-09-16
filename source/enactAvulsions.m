@@ -1,4 +1,4 @@
-function grid = enactAvulsions(avulsionCellInds,grid,inlet)
+function grid = enactAvulsions(avulsionCellInds,grid,inlet,gamma,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p)
 % enactAvulsions.m: Generates new channel flow paths based on new avulsion
 % sites identified with avulsionCheck.m. The new channel path originating 
 % from each avulsion site is constructed following paragraph 20 and equation 15.
@@ -13,10 +13,10 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
     grid.sinkFlag = (grid.zFill - grid.z) > eps;
 
     % loop through each cell identified for avulsion
-    for n=1:numel(avulsionCellInds)
+    for navul=1:numel(avulsionCellInds)
 
         % propogate the avulsion from the cell ind
-        grid=propagateAvulsion(grid,avulsionCellInds(n));
+        grid=propagateAvulsion(grid,avulsionCellInds(navul),gamma,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p);
 
         % check that all cells flagged as channels have defined
         % flowsFrom cells
@@ -27,7 +27,6 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
                 end
             end
         end
-
     end
 
     % check that all cells flagged as channels have defined
@@ -39,4 +38,5 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
             end
         end
     end
+
 end  % end path construction for avulsions
