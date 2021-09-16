@@ -57,11 +57,56 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 
                 % Flow has reached a distributary junction.
                 [source.row,source.col] = ind2sub(grid.size,cellIndFlowToRoute);
-                source.ind = cellIndFlowToRoute;
+                [branch1.startRow,branch1.startCol] = ind2sub(grid.size,cellsIndFlowsTo(1));
+                [branch2.startRow,branch2.startCol] = ind2sub(grid.size,cellsIndFlowsTo(2));
                 
-                % determine the partitioning fraction for water down each
-                % branch
-                [branch1, branch2] = computeBranchDischargePartitioning(grid, source, cellsIndFlowsTo, Qw_routed, gamma);
+                % look up the slope from the source cell to each receiving
+                % cell, following the convention that downhill slopes are
+                % positive
+                dz1 = -(grid.z(cellsIndFlowsTo(1))-grid.z(cellIndFlowToRoute));
+                dL1 = grid.dx*sqrt((source.row-branch1.startRow)^2+(source.col-branch1.startCol)^2);
+                branch1.S = dz1/dL1;
+                
+                dz2 = -(grid.z(cellsIndFlowsTo(2))-grid.z(cellIndFlowToRoute));
+                dL2 = grid.dx*sqrt((source.row-branch2.startRow)^2+(source.col-branch2.startCol)^2);
+                branch2.S = dz2/dL2;
+                
+                if branch1.S<= 0 && branch2.S <= 0
+                    %distribute flow so that more goes to less-adverse
+                    %slope. Note that there may be routing rules to port
+                    %over from Murray and Paola (1994) for these
+                    %conditions.
+                    if branch1.S < branch2.S
+                        branch2.Qw_fractionReceived = (abs(branch1.S)^gamma)/((abs(branch1.S)^gamma + abs(branch2.S)^gamma)); 
+                        branch1.Qw_fractionReceived = 1-branch2.Qw_fractionReceived;
+                    else
+                        branch1.Qw_fractionReceived = (abs(branch2.S)^gamma)/((abs(branch1.S)^gamma + abs(branch2.S)^gamma)); 
+                        branch2.Qw_fractionReceived = 1-branch1.Qw_fractionReceived;
+                    end
+                elseif branch1.S <= 0 && branch2.S > 0
+                   branch1.Qw_fractionReceived = 0;
+                    branch2.Qw_fractionReceived = 1;
+                elseif branch1.S > 0 && branch2.S <= 0
+                    branch1.Qw_fractionReceived = 1;
+                    branch2.Qw_fractionReceived = 0;
+                else
+                    % Distribute flow between downstream cells using equation 11. 
+                    branch1.Qw_fractionReceived= (branch1.S^gamma)/((branch1.S^gamma + branch2.S^gamma)); % fraction of flow apportioned to the new branch (equation 11)
+                    branch2.Qw_fractionReceived = 1-branch1.Qw_fractionReceived;
+                end
+                
+                branch1.Qw_received = Qw_routed*branch1.Qw_fractionReceived;
+                branch2.Qw_received = Qw_routed*branch2.Qw_fractionReceived;
+                
+                % check that the routed discharge is positive for both
+                % branches, and that sum of discharge going to the two
+                % distributaries equals the discharge from the contributing
+                % cell
+                if branch1.Qw_received<0 || branch2.Qw_received<0
+                    error('Negative discharge routed at distributary junction')
+                elseif abs(grid.Qw_toRoute(cellIndFlowToRoute) - (branch1.Qw_received + branch2.Qw_received)) > (100*eps)
+                    error('Inconsistent mass balance for discharge at distributary junction')
+                end
                 
                 % update grid.Qw and grid.Qw_toRoute
                 grid.Qw(branch1.startRow,branch1.startCol) =  grid.Qw(branch1.startRow,branch1.startCol) + branch1.Qw_received;
@@ -109,5 +154,3 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
 % %             error('flowRoute: Summed discharge at channel network outlets does not equal discharge at inlet');
 % %         end
     end % end nested function routeFlow
-    
-
