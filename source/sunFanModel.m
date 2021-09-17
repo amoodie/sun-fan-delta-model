@@ -106,6 +106,9 @@ iter = 0;
         % check that the network is valid (and repair/trim) what is not
         grid=validateNetwork(grid,inlet);
 
+        % compute the flowsToCount for each cell
+        grid = countFlowsToInds(grid);
+
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance);
 
@@ -138,6 +141,10 @@ iter = 0;
         % check that any channels that are receiving flow below threshold
         % are disconnected from the network
         grid = unmarkAbandonedChannels(grid,Qw_threshold);
+
+        % compute the flowsToCount for each cell (there may have been
+        % changes to the network in above step)
+        grid = countFlowsToInds(grid);
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
