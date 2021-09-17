@@ -15,16 +15,11 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
         % get array index for inlet cell, the first cell from which to
         % route flow
         cellIndFlowToRoute = sub2ind(grid.size,inlet.row,inlet.col);
-        
-        grid.networkEndpoints = false(grid.size); % initialize grid to track network endpoints
+
         % identify network endpoints as cells that do not flow into any
         % other cells
-        for k=1:numel(grid.channelFlag)
-            if grid.channelFlag(k) && isempty(grid.flowsTo{k})
-                grid.networkEndpoints(k) = true; 
-            end
-        end
-        
+        grid.networkEndpoints = (grid.flowsToCount == 0);
+
         while ~isempty(cellIndFlowToRoute) % route flow while there are still cells flagged to route from
             % for each cell with flow to route, route its flow to next cell
             % along the flow path, pausing at any bifurcations (i.e.,
