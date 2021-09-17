@@ -29,7 +29,8 @@ function [grid] = updateMorphodynamicVariables(grid,alpha_b,alpha_r,alpha_sa,alp
 
     % Enforce no sediment flux out for any cells that do not flow to
     % other cells
-    grid.Qs_out(cellfun(@isempty,grid.flowsTo)) = 0;
+    grid.Qs_out(grid.flowsToCount == 0) = 0;
+    grid.Qs_out(isnan(grid.flowsToCount)) = 0;
 
     % Enforce no sediment flux out the for any cells below sea
     % level. (This is likely redundant, as no ocean cells should flow
