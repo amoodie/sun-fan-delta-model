@@ -48,6 +48,7 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
         % store cell connectivity (grid.flowsTo and grid.flowsFrom)
         grid.flowsTo = cell(grid.size);
         grid.flowsFrom = cell(grid.size);
+        grid.flowsToCount = zeros(grid.size);
         
         % create grids to flag other attributes
         grid.oceanFlag = grid.z<=oceanLevel.z(1); % flag to identify whether a cell is in the ocean, using initial ocean level.
