@@ -61,14 +61,14 @@ grid.DEMoptions.noiseAmplitude = 0.001; % meters
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 5; % simulation time, years
+tMax_yr = 0.5; % simulation time, years
 tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 0.1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
 % boundary conditions
 inlet.row = 1; % set inlet point for water and sediment
-inlet.col = 50;
+inlet.col = 1;
 boundaryCondition = 'closed';
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,10); % times that define start of intervals with a particular ocean level
 oceanLevel.z = linspace(2,2,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
@@ -77,11 +77,14 @@ oceanLevel.z = linspace(2,2,10); % timeseries elevation of ponded water, m (xi_t
 % only use to debug.
 debugFigure = true;
 
+% set a rng seed for reproducible timing
+rng(1)
+
 %%% End of parameters to edit 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % define name for output directory
-outputDir = fullfile('.','output',runName);
+outputDir = fullfile('.','..','output',runName);
 
 % adjust time parameters for use in model execution
 tMax_yr = tStep_yr*ceil(tMax_yr/tStep_yr);% adjust tMax so that the value is reached in an integer number of time steps
