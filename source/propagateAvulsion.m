@@ -174,8 +174,15 @@ function [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs)
     % loop through
     for i=1:4
         ithPair = pairs(i,:);
+        ithNghbrs = nghbrs(ithPair);
+        % check whether any neighbor cells would be out of range of the
+        % domain, if they are, there cannot be any cross-over, so we just
+        % proceed with the loop
+        if any(ithNghbrs<1) || any(ithNghbrs>grid.size(1)) || any(ithNghbrs<1) || any(ithNghbrs==grid.size(2))
+            continue; % continue the loop
+        end
         % always check the presence of channels first (faster)
-        if all(grid.channelFlag(nghbrs(ithPair)))
+        if all(grid.channelFlag())
             % both constraining cells are channels
             if strcmp(cornerOption, 'connected')
                 % check whether these two constraining cells are actually

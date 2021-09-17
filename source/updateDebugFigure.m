@@ -10,6 +10,10 @@ function [fig] = updateDebugFigure(fig, grid)
 
     subplot(sp1); hold on; cla;
         imagesc(grid.z);
+        contourlevel = grid.oceanLevel;
+        if isfinite(contourlevel)
+            contour3(grid.z,[contourlevel,contourlevel],'k-')
+        end
         colormap(sp1, 'summer');
         title('bed elev');
         gridToChannelArrows(grid)
@@ -24,7 +28,7 @@ function [fig] = updateDebugFigure(fig, grid)
         title('bed change');
 
     subplot(sp3); cla;
-        stage = grid.z + grid.H;
+        stage = grid.H;
         upperlim = prctile(stage(:), 90);
         stage(~isfinite(stage)) = NaN; grid.z((~isfinite(stage)));
         imagesc(stage);

@@ -31,6 +31,7 @@ beta = parameters.beta;
 Qw_inlet = parameters.Qw_inlet;
 Qs_inlet = parameters.Qs_inlet;
 Qw_threshold = parameters.Qw_threshold;
+Qs_threshold = parameters.Qs_threshold;
 Qw_mismatch_tolerance = parameters.Qw_mismatch_tolerance; 
 D = parameters.D; 
 oceanLevel = parameters.oceanLevel;
@@ -72,6 +73,7 @@ grid = updateSlope(grid,boundaryCondition,t);
 
 % flag grid cell with inlet as a channel cell
 grid.channelFlag(inlet.row,inlet.col) = true;
+grid.inletCell = sub2ind(size(grid.x),inlet.row,inlet.col);
 
 % create grid to track elevation change in the last time step
 grid.deltaz = zeros(grid.size); 
@@ -93,7 +95,7 @@ end
 
 % create a debugging figure if specified
 if debugFigure
-    debugFigureUpdateTime = tStep_sec * 10; % how often to update
+    debugFigureUpdateTime = tStep_sec * 100; % how often to update
     debugFig = figure('Position', [10 10 900 600]);
 end
 
@@ -112,7 +114,7 @@ iter = 0;
         
         % update morphodynamic variables for each cell in the grid
         % (channel width, chanenl depth and sediment flux)
-        grid = updateMorphodynamicVariables(grid,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p);
+        grid = updateMorphodynamicVariables(grid,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p,false);
         
         % update the debugging figure
         if debugFigure
@@ -130,7 +132,8 @@ iter = 0;
         % update grid.oceanFlag following topography update
         t_yr = t / secondsPerYear;
         indOceanLevel = find(t_yr>=oceanLevel.timeStart_yr,1,'last');
-        grid.oceanFlag = grid.z <= oceanLevel.z(indOceanLevel);
+        grid.oceanLevel = oceanLevel.z(indOceanLevel);
+        grid.oceanFlag = grid.z <= grid.oceanLevel;
         
         % check that any channels that are receiving flow below threshold
         % are disconnected from the network
@@ -138,7 +141,7 @@ iter = 0;
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
-        avulsionCellInds = avulsionCheck(grid,beta);
+        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold);
         
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths

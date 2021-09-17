@@ -106,7 +106,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                     error('Negative discharge routed at distributary junction')
                 elseif abs(grid.Qw_toRoute(cellIndFlowToRoute) - (branch1.Qw_received + branch2.Qw_received)) > (100*eps)
                     error('Inconsistent mass balance for discharge at distributary junction')
-                end 
+                end
                 
                 % update grid.Qw and grid.Qw_toRoute
                 grid.Qw(branch1.startRow,branch1.startCol) =  grid.Qw(branch1.startRow,branch1.startCol) + branch1.Qw_received;
@@ -153,4 +153,4 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
 % %         if abs(Qw_out_total - Qw_inlet) > 100*eps
 % %             error('flowRoute: Summed discharge at channel network outlets does not equal discharge at inlet');
 % %         end
-    end % end nested function routeFlow    
+    end % end nested function routeFlow

@@ -13,10 +13,10 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
     grid.sinkFlag = (grid.zFill - grid.z) > eps;
 
     % loop through each cell identified for avulsion
-    for n=1:numel(avulsionCellInds)
+    for navul=1:numel(avulsionCellInds)
 
         % propogate the avulsion from the cell ind
-        grid=propagateAvulsion(grid,avulsionCellInds(n));
+        grid=propagateAvulsion(grid,avulsionCellInds(navul));
 
         % check that all cells flagged as channels have defined
         % flowsFrom cells
@@ -27,7 +27,6 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
                 end
             end
         end
-
     end
 
     % check that all cells flagged as channels have defined
@@ -39,4 +38,5 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
             end
         end
     end
+
 end  % end path construction for avulsions

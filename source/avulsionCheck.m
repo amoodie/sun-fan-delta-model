@@ -1,4 +1,4 @@
-function avulsionCellInds = avulsionCheck(grid,beta)
+function avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold)
 % avulsionCheck.m: Identifies new avulsion sites. For each channel cell,
 % look up the local bed elevation, channel depth, and downstream slope.
 % Compare to elevation for neighboring cells and distance to those cells.
@@ -43,6 +43,8 @@ avulsionCellInds = [];
                     % there. Therefore, leave avulsion susceptibility index
                     % as NaN for this cell and continue to next loop
                     % iteration.
+                    continue
+                elseif grid.Qs_in(k) < Qs_threshold % is not receiving sedimen, so not need to avulse here!
                     continue
                 else
                     z_k = grid.z(rowSearch(l),colSearch(l));
