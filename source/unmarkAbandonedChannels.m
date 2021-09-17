@@ -14,12 +14,7 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
 %                 one outflow (one index in `flowsTo`.
 
     % make a list of all the branches in the domain
-    branchCellIndices = []; % a list of where a channel cell flows to two locations (i.e., branch cells)
-    for k=1:numel(grid.channelFlag)
-        if numel(grid.flowsTo{k}) == 2
-            branchCellIndices = [branchCellIndices, k]; %#ok<*AGROW>
-        end
-    end
+    branchCellIndices = find(grid.flowsToCount == 2)';
 
     % loop through the branches and check cells downstream of the branch
     % point (i.e., the `flowsTo{branchIndex}`) against the discharge
