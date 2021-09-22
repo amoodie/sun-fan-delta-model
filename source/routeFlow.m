@@ -107,8 +107,8 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 grid.Qw(branch1.startRow,branch1.startCol) =  grid.Qw(branch1.startRow,branch1.startCol) + branch1.Qw_received;
                 grid.Qw(branch2.startRow,branch2.startCol) =  grid.Qw(branch2.startRow,branch2.startCol) + branch2.Qw_received;
 
-                grid.Qw_toRoute(branch1.startRow,branch1.startCol) = branch1.Qw_received;
-                grid.Qw_toRoute(branch2.startRow,branch2.startCol) = branch2.Qw_received;
+                grid.Qw_toRoute(branch1.startRow,branch1.startCol) = grid.Qw_toRoute(branch1.startRow,branch1.startCol) + branch1.Qw_received;
+                grid.Qw_toRoute(branch2.startRow,branch2.startCol) = grid.Qw_toRoute(branch2.startRow,branch2.startCol) + branch2.Qw_received;
                 grid.Qw_toRoute(source.row,source.col) = 0;
 
                 % Record the flow partitioning information in the
