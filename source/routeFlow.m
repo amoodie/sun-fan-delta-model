@@ -167,17 +167,48 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             cellIndFlowToRoute = find(and(readyToFlow,notAlreadyFlowed),1,'first');
             
         end
-        
+
         %% flow routing is now complete. Run some diagnostic checks:
-        % (1) Check that no cell has a discharge greater than the inlet discharges 
+        % (1) check if there is any flow remaining in the domain
+        if any(~isnan(grid.Qw_toRoute(:)))
+            % if there is any flow remaining, then there is a loop.
+            %    we trim out loops here by walking down stream from the
+            %    loop until encountering another channel pathway.
+            %    Note: we walk down all paths that the cell flowsTo,
+            %    because we do not know the loop structure.
+
+            % find remaining water
+            remaining_Qw = find(~isnan(grid.Qw_toRoute));
+
+            % recursively walk the channel path and unset channels
+            % note: this function is recursive. See docstring and
+            % `unmarkAbandonedChannels.m` for more information.
+            abandonAll = false; % whether another channel stops abandonment or not
+
+            % for each remaining cell
+            for i = 1:length(remaining_Qw)
+                % find where it flows to, then remove connection to
+                flowsTo_i = grid.flowsTo{remaining_Qw(i)};
+                grid.flowsTo{remaining_Qw(i)} = [];
+                % for each place it flows to
+                for j = 1:length(flowsTo_i)
+                    % unset the channels down the path
+                    [grid] = unmarkChannelToNode(grid, flowsTo_i(j), remaining_Qw(i), abandonAll);
+                end
+            end
+        else
+            % if there is no flow remaining
+            % (1a) sum the discharge for the network endpoints and verify that
+            %    it equals the input discharge
+            Qw_out_total = sum(grid.Qw(grid.networkEndpoints));
+            if abs(Qw_out_total - Qw_inlet) > Qw_mismatch_tolerance
+                error('flowRoute: Summed discharge at channel network outlets does not equal discharge at inlet');
+            end
+        end
+
+        % (2) Check that no cell has a discharge greater than the inlet discharges 
         if any((grid.Qw(:) - Qw_inlet) > Qw_mismatch_tolerance)
             error('Error in flow routing: discharge greater than input discharge detected')
         end
-       
-        % (2) sum the discharge for the network endpoints and verify that
-        %    it equals the input discharge
-        Qw_out_total = sum(grid.Qw(grid.networkEndpoints));
-        if abs(Qw_out_total - Qw_inlet) > Qw_mismatch_tolerance
-            error('flowRoute: Summed discharge at channel network outlets does not equal discharge at inlet');
-        end
+
     end % end nested function routeFlow
