@@ -25,7 +25,7 @@ function grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet)
             if numel(contributingCells)==1
                 grid.Qs_in(i,j) = grid.Qs_out(contributingCells);
             elseif numel(contributingCells)>1 % multiple contributing cells
-                for k=1:numel(contributingCells)
+                for cc=1:numel(contributingCells)
                     % Sediment routing at network junctions is not explictly
                     % discussed in the paper. For simplicitly, I assume
                     % that the sediment discharge is partitioned in the
@@ -34,15 +34,15 @@ function grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet)
                     % look up Qs_out at the contributing cell; use the water discharge partition fraction at
                     % at the tributary to set the partition fraction
                     % for sediment
-                    Qs_out_fromContributingCell = grid.Qs_out(contributingCells(k));
+                    Qs_out_fromContributingCell = grid.Qs_out(contributingCells(cc));
                     % Qs_out_fromContributingCell is sometimes empty:
                     % if discharge did not reach this location due to routeFlow rules,
                     % depsite these cells being connected by a channel in the tracking cell arrays.
                     % We thus include a safety here, to just proceed with the Qs calculation,
                     % but with 0 sediment contribution from this cell
                     if Qs_out_fromContributingCell > 0
-                        Qw_fraction_receivedFromContributingCell = grid.flowsToFrac_Qw_distributed{contributingCells(k)};  
-                        [receivingCellRow,receivingCellCol] = ind2sub(grid.size,grid.flowsTo{contributingCells(k)});
+                        Qw_fraction_receivedFromContributingCell = grid.flowsToFrac_Qw_distributed{contributingCells(cc)};
+                        [receivingCellRow,receivingCellCol] = ind2sub(grid.size,grid.flowsTo{contributingCells(cc)});
                         if i==receivingCellRow(1) && j==receivingCellCol(1)
                             Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(1);
                         elseif i==receivingCellRow(2) && j==receivingCellCol(2)
