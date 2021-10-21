@@ -86,29 +86,19 @@
                 break
             end
 
-            % select the routing type
-            route_flag = 'probabalistic'; % 'probabalistic';
-            switch route_flag
-                case 'steepest'
-                    % now find the index of the next location that we might visit
-                    [~,indNghbrStep] = max(nghbrSlopes);
+            % set invalid cells in prob to NaN (no necessary since product taken below?)
+            normfunc = normfunc0;
+            normfunc(isnan(nghbrSlopes)) = NaN;
 
-                case 'probabalistic'
-                    % set invalid cells in prob to NaN (no necessary since product taken below?)
-                    normfunc = normfunc0;
-                    normfunc(isnan(nghbrSlopes)) = NaN;
+            % make a probability for each neighbor
+            probs = (nghbrSlopes .* normfunc) / nansum(nghbrSlopes .* normfunc);
 
-                    % make a probability for each neighbor
-                    probs = (nghbrSlopes .* normfunc) / nansum(nghbrSlopes .* normfunc);
+            % now find the index of the next location that we might visit
+            indNghbrStep = find(rand()<=cumsum(probs, 'omitnan'), 1, 'first');
 
-                    % now find the index of the next location that we might visit
-                    indNghbrStep = find(rand()<=cumsum(probs, 'omitnan'), 1, 'first');
-                    
-                    % note: the following line can be used *instead* for
-                    %   steepest descent routing
-                    % [~,indNghbrStep] = max(nghbrSlopes);
-
-            end
+            % note: the following line can be used *instead* for
+            %   steepest descent routing
+            % [~,indNghbrStep] = max(nghbrSlopes);
 
             %% take the step to determine what the new ind will be
             step = iwalk(indNghbrStep);

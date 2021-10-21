@@ -187,9 +187,11 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
 
             % for each remaining cell
             for i = 1:length(remaining_Qw)
+                remaining_Qw_i = remaining_Qw(i);
                 % find where it flows to, then remove connection to
-                flowsTo_i = grid.flowsTo{remaining_Qw(i)};
-                grid.flowsTo{remaining_Qw(i)} = [];
+                flowsTo_i = grid.flowsTo{remaining_Qw_i};
+                grid.flowsTo{remaining_Qw_i} = [];
+                grid.flowsToCount(remaining_Qw_i) = grid.flowsToCount(remaining_Qw_i) - 1;
                 % for each place it flows to
                 for j = 1:length(flowsTo_i)
                     % unset the channels down the path
