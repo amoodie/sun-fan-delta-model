@@ -1,4 +1,23 @@
 function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
+    % routeFlow: route flow through the network
+      %%% Flow routing begins with the inlet cell, and it formulated as a
+      %%% sequential unordered walk through the channel network. Flow is
+      %%% stepped cell-by-cell, only moving to flowsTo cells when a given
+      %%% location has received flow from all contributing cells. This
+      %%% algorithm is an O(n) process, where n is the number of cells in
+      %%% the network.
+      %%%
+      %%% Routing is organized around `Qw_toRoute`, a `grid.size` of NaN, which
+      %%% records the location and volume of flow in the network. The cell
+      %%% to route flow next is selected by finding a location where
+      %%% `~isnan(Qw_toRoute)` and `readyToFlow`, where `readyToFlow` is
+      %%% true when a cell has received flow from all upstream cells. A
+      %%% cell is also limited to only flow once, by checking if it has
+      %%% `alreadyFlowed`; this check prevents loops in the network from
+      %%% recursion, but may lead to flow becoming trapped within the
+      %%% network. In these cases, the network loop is trimmed out, so that
+      %%% there is no loop on the next timestep.
+
         %% set up the routing
         % routeFlow: routes flow along the channel network, splitting flow at branches using eqn. 11.
         grid.Qw = zeros(grid.size); % initialize grid that stores total water discharge during flow routing
