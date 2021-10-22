@@ -95,16 +95,24 @@ end
 
 % create a debugging figure if specified
 if debugFigure
-    debugFigureUpdateTime = tStep_sec * 500; % how often to update
+    debugFigureUpdateTime = tStep_sec * 100; % how often to update
     debugFig = figure('Position', [10 10 900 600]);
 end
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 iter = 0;
     for t = startingTime:tStep_sec:tMax_sec
-
+        
         % compute the flowsToCount for each cell
         grid = countFlowsToInds(grid);
+        
+        %%% ARE THE ARRAYS THE SAME??
+        cnt = sum(grid.flowsToGraph, 1);
+        cnt = cnt(grid.channelFlag);
+        eql = grid.flowsToCount(~isnan(grid.flowsToCount)) == cnt;
+        if ~all(eql)
+            keyboard()
+        end
 
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance);

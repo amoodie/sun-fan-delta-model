@@ -18,6 +18,7 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
         % upstream direction. Look at the flowsFrom array. This tells us
         % whether the cell has flow coming in from somewhere else (is it a
         % confluence or conduit?).
+        numberFlowsFrom = sum(grid.flowsFromGraph(:, currentIndex));
         if numel(grid.flowsFrom{currentIndex}) >= 2
             % this is a channel cell with flow coming into it from two
             % places. Thus, it will still have discharge even after it no
@@ -45,6 +46,7 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
 
             % disconnect the flowsFrom
             grid.flowsFrom{currentIndex} = []; % reset cell to empty list
+            grid.flowsFromGraph(:, currentIndex) = 0;
 
         else
             error('error found in length of flowsFrom indices')
@@ -54,6 +56,7 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
         % check what kind of cell currentIndex is with respect to the
         % downstream direction. Look at the flowsTo array to find out if
         % this is a branch or conduit or outlet
+        numberFlowsTo = sum(grid.flowsToGraph(:, currentIndex));
         if numel(grid.flowsTo{currentIndex}) == 2
             % this cell is a branching cell, so we have to treat
             % specially
@@ -69,13 +72,18 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
             % pathway walks, also need to duplicate the current
             % location (i.e., the branch) as the `newPrevs` of where
             % the `newStarts` received flow from.
-            newStarts = grid.flowsTo{currentIndex};
+            startsBool = logical(grid.flowsToGraph(:, currentIndex));  % true where flowsTo has channels
+            newStarts = grid.nghbrs(startsBool, currentIndex);  % the cell indices of the next cells
+            %newStarts = grid.flowsTo{currentIndex};
             newPrevs = [currentIndex; currentIndex];
 
             % clear info on where this node would go.
             % (we already recorded where it would go as newStarts)
             grid.flowsTo{currentIndex} = []; % reset cell to empty list
             grid.flowsToFrac_Qw_distributed{currentIndex} = [];
+            
+            grid.flowsToGraph(:, currentIndex) = 0;
+            %grid.flowsToFrac_Qw_distributed{currentIndex} = [];
 
             for i=1:2
                 % walk each branch, recursively
@@ -90,9 +98,16 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
 
             % grab the next step
             nextIndex = grid.flowsTo{currentIndex};
+            
+            nextBool = logical(grid.flowsToGraph(:, currentIndex));  % true where flowsTo goes next
+            nextIndex = grid.nghbrs(nextBool, currentIndex);  % the cell indices of the next cells
 
             % now unset the flowsTo, channelFlag, partition
             grid.flowsTo{currentIndex} = [];
+            grid.channelFlag(currentIndex) = false;
+            grid.flowsToFrac_Qw_distributed{currentIndex} = [];
+            
+            grid.flowsToGraph(:, currentIndex) = 0;
             grid.channelFlag(currentIndex) = false;
             grid.flowsToFrac_Qw_distributed{currentIndex} = [];
 

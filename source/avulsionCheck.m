@@ -10,6 +10,9 @@ function avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold)
 % initialize an array to store the cell indices where avulsion should happen
 avulsionCellInds = [];
 
+BRANCH_LIMIT = 2;
+flowsToCount = sum(grid.flowsToGraph, 1);
+
     % determine all the channel locations to loop through
     channelInds = find(grid.channelFlag);
 
@@ -18,7 +21,7 @@ avulsionCellInds = [];
 
         k = channelInds(kk);
 
-        if grid.flowsToCount(k)<2 % i.e., if it flows to no more than 1 cell, then eligible for a new avulsion
+        if flowsToCount(k) < BRANCH_LIMIT % i.e., if it flows to no more than 1 cell, then eligible for a new avulsion
             z_i = grid.z(k);
             H_ij = grid.H(k); % listed as "H_ij" in the paper, but I don't understand that notation as it seems to imply depth from i to j; easier to conceive as depth at i
 

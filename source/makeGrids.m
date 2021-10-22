@@ -49,6 +49,21 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
         grid.flowsTo = cell(grid.size);
         grid.flowsFrom = cell(grid.size);
         grid.flowsToCount = zeros(grid.size);
+        grid.flowsToGraph = zeros([8, grid.size], 'int8');
+        grid.flowsFromGraph = zeros([8, grid.size], 'int8');
+        
+        % create grid to label all of the neighbors of every cell
+        grid.iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
+        cellIndsPadded = padarray(reshape(1:numel(grid.z), grid.size), [1, 1]);
+        grid.nghbrs = zeros([8, grid.size], 'int64');
+        grid.nghbrs(1, :, :) = cellIndsPadded(1:end-2, 1:end-2); % NE
+        grid.nghbrs(2, :, :) = cellIndsPadded(1:end-2, 2:end-1);
+        grid.nghbrs(3, :, :) = cellIndsPadded(1:end-2, 3:end);
+        grid.nghbrs(4, :, :) = cellIndsPadded(2:end-1, 3:end);
+        grid.nghbrs(5, :, :) = cellIndsPadded(3:end, 3:end);
+        grid.nghbrs(6, :, :) = cellIndsPadded(3:end, 2:end-1);
+        grid.nghbrs(7, :, :) = cellIndsPadded(3:end, 1:end-2);
+        grid.nghbrs(8, :, :) = cellIndsPadded(2:end-1, 1:end-2);
         
         % create grids to flag other attributes
         grid.oceanFlag = grid.z<=oceanLevel.z(1); % flag to identify whether a cell is in the ocean, using initial ocean level.

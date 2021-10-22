@@ -15,6 +15,11 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
 
     % make a list of all the branches in the domain
     branchCellIndices = find(grid.flowsToCount == 2)';
+    
+    %%% DELETE ME AFTER LOOP CHANGE
+    iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
+                +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
+    %%%
 
     % loop through the branches and check cells downstream of the branch
     % point (i.e., the `flowsTo{branchIndex}`) against the discharge
@@ -48,6 +53,13 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 grid.flowsTo{branchIndex} = grid.flowsTo{branchIndex}(1:2 ~= j);
                 grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
 
+                % unset flowsTo *at the branch* and update partitioning
+                
+                %%% this is temp code until the loop can be changed
+                which_index = find((startIndex - branchIndex) == iwalk);
+                grid.flowsToGraph(which_index, branchIndex) = 0;
+                % grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
+                
                 % recursively walk the channel path and unset anything
                 % that is abandoned (i.e., cells that have no *other*
                 % `flowsFrom` than the abandoned path.

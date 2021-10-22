@@ -26,6 +26,7 @@
         % configure index stepper based on grid dimensions
         iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
                  +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
+        toToFrom = [5, 6, 7, 8, 1, 2, 3, 4]; % convert the direction step to new cell into a step from 
              
         % configure the probabalistic routing array (theta_ij in paper) based on 
         % neighboring cells of avulsion site
@@ -39,10 +40,10 @@
             stepDir = find(iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
             offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
             deltatheta = circshift(v, offset); % rotate the deviations to center at stepDir
-            normfunc0 = exp(-(deltatheta / theta0).^2);  % the gaussian randomness function
+            normfunc0 = exp(-(deltatheta / theta0).^2)';  % the gaussian randomness function
         else
             % it doesn't flow anywhere, so just make all directions equal
-            normfunc0 = ones(1,8);
+            normfunc0 = ones(8,1);
         end
 
         % while there is still non-ocean non-channel non-sink cells to walk
@@ -55,10 +56,10 @@
 
             % find the indices of the neighbors and get slopes to there
             nghbrs = indCurrent + iwalk;
-            nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
-                           grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
-                           grid.S.SW(indCurrent) grid.S.W(indCurrent)];
- 
+            [iCurrent, jCurrent] = ind2sub(grid.size, indCurrent);
+            
+            nghbrSlopes = squeeze(grid.S.d8(:, iCurrent, jCurrent));
+
             % add to the list of forbidden cells with the locations that would create crossover channels
             [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs);
             forbiddenCells = unique([forbiddenCells, forbiddenCorners]);
@@ -110,6 +111,10 @@
             grid.flowsFrom{indNew} = [grid.flowsFrom{indNew}; indCurrent]; % append source cell to "flows from" list
             wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
             grid.channelFlag(indNew) = true; % mark this cell as now being a channel
+            
+            % make the connection to this new cell
+            grid.flowsToGraph(indNghbrStep, iCurrent, jCurrent) = 1;
+            grid.flowsFromGraph(toToFrom(indNghbrStep), iNew, jNew) = 1;
 
             %% determine whether the new point is somewhere we want to continue from
 

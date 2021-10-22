@@ -46,6 +46,13 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             grid.flowsFromCount(k) = numel(grid.flowsFrom{k});
         end
         
+        %%% ARE THE ARRAYS THE SAME??
+        cnt = sum(grid.flowsFromGraph, 1);
+        eql = grid.flowsFromCount == cnt;
+        if ~all(eql)
+            keyboard()
+        end
+        
         % set the tracker for places that have all of their inputs filled
         grid.flowedFromSources = zeros(grid.size);
         grid.flowedFromSources(inlet.row,inlet.col) = 1;

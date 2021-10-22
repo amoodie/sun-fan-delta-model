@@ -43,6 +43,16 @@ function grid = updateSlope(grid,boundaryCondition,t) % nested function
         grid.S.SW = -(grid.zPadded(grid.stencil.SW.r,grid.stencil.SW.c)-grid.z)/(sqrt(2)*grid.dx);
         grid.S.W = -(grid.zPadded(grid.stencil.W.r,grid.stencil.W.c)-grid.z)/(sqrt(2)*grid.dx);
         
+        grid.S.d8 = nan([8, grid.size]);
+        grid.S.d8(1, :, :) = (grid.z - grid.zPadded(1:end-2, 1:end-2)) / (grid.dx * sqrt(2)); % NE
+        grid.S.d8(2, :, :) = (grid.z - grid.zPadded(1:end-2, 2:end-1)) / (grid.dx);
+        grid.S.d8(3, :, :) = (grid.z - grid.zPadded(1:end-2, 3:end)) / (grid.dx * sqrt(2));
+        grid.S.d8(4, :, :) = (grid.z - grid.zPadded(2:end-1, 3:end)) / grid.dx;
+        grid.S.d8(5, :, :) = (grid.z - grid.zPadded(3:end, 3:end)) / (grid.dx * sqrt(2));
+        grid.S.d8(6, :, :) = (grid.z - grid.zPadded(3:end, 2:end-1)) / grid.dx;
+        grid.S.d8(7, :, :) = (grid.z - grid.zPadded(3:end, 1:end-2)) / (grid.dx * sqrt(2));
+        grid.S.d8(8, :, :) = (grid.z - grid.zPadded(2:end-1, 1:end-2)) / grid.dx;
+        
         switch boundaryCondition
             case 'closed'
                 grid.S.NW(isnan(grid.S.NW)) = -Inf;
