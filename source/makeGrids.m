@@ -63,6 +63,9 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
         grid.nghbrs(7, :, :) = cellIndsPadded(3:end, 1:end-2);
         grid.nghbrs(8, :, :) = cellIndsPadded(2:end-1, 1:end-2);
         
+        % create the slope tracking array
+        grid.S.d8 = nan([8, grid.size]);
+
         % create a stepping stencil
         grid.iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
         

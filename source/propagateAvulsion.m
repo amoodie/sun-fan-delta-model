@@ -21,12 +21,9 @@
         % routing, we set the previous index as where the flow is already
         % going, so that this location cannot be the location of the first
         % step
-        %indPrev = grid.flowsTo{avulsionCellInd}';
         indPrev = grid.nghbrs(logical(grid.flowsToGraph(:, avulsionCellInd)), avulsionCellInd);
 
         % configure index stepper based on grid dimensions
-        iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
-                 +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
         toToFrom = [5, 6, 7, 8, 1, 2, 3, 4]; % convert the direction step to new cell into a step from 
              
         % configure the probabalistic routing array (theta_ij in paper) based on 
@@ -36,17 +33,17 @@
             % Determine the direction of flow between indCurrent and where 
             %   flow was going before avulsion
             theta0 = pi/(2*sqrt(2));  % normalization term
-            v = [-3, -2, -1, 0, 1, 2, 3, 4] * (pi/4);  % initialize centerred on step=4
+            v = [-3; -2; -1; 0; 1; 2; 3; 4] * (pi/4);  % initialize centerred on step=4
             %%%% WARNING flowsToIdxs HARDCODED FOR 1 PLACE WHERE FLOWS TO
             flowsToIdxs = grid.nghbrs(logical(grid.flowsToGraph(:, avulsionCellInd)), avulsionCellInd);
             indDiff = flowsToIdxs - avulsionCellInd;
-            stepDir = find(iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
+            stepDir = find(grid.iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
             offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
             deltatheta = circshift(v, offset); % rotate the deviations to center at stepDir
             normfunc0 = exp(-(deltatheta / theta0).^2);  % the gaussian randomness function
         else
             % it doesn't flow anywhere, so just make all directions equal
-            normfunc0 = ones(1,8);
+            normfunc0 = ones(8,1);
         end
 
         % while there is still non-ocean non-channel non-sink cells to walk
@@ -56,22 +53,13 @@
 
             % update list of forbiddenCells
             forbiddenCells = [avulsionCellInd, indPrev]; % previous location is forbidden
-
-            % find the indices of the neighbors and get slopes to there
-%             nghbrs = indCurrent + iwalk;
-%             [iCurrent, jCurrent] = ind2sub(grid.size, indCurrent);
             
-            % nghbrSlopes = squeeze(grid.S.d8(:, iCurrent, jCurrent));
+            nghbrs = indCurrent + grid.iwalk;
             
-            nghbrs = indCurrent + iwalk;
-            nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
-                           grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
-                           grid.S.SW(indCurrent) grid.S.W(indCurrent)];
-            
-            
-            [iCurrent, jCurrent] = ind2sub(grid.size, indCurrent);
-            
-            %nghbrSlopes = squeeze(grid.S.d8(:, iCurrent, jCurrent));
+            %%%%% want to get neighbors out of here
+            % nghbrs = grid.nghbrs(:, indCurrent); 
+            %%%%%
+            nghbrSlopes = squeeze(grid.S.d8(:, indCurrent));
 
             % add to the list of forbidden cells with the locations that would create crossover channels
             [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs);
@@ -116,12 +104,12 @@
             % [~,indNghbrStep] = max(nghbrSlopes);
 
             %% take the step to determine what the new ind will be
-            step = iwalk(indNghbrStep);
+            step = grid.iwalk(indNghbrStep);
             indNew = indCurrent + step;
             [iNew, jNew] = ind2sub(grid.size, indNew);
 
             % make the connection to this new cell
-            grid.flowsToGraph(indNghbrStep, iCurrent, jCurrent) = 1;
+            grid.flowsToGraph(indNghbrStep, indCurrent) = 1;
             grid.flowsFromGraph(toToFrom(indNghbrStep), iNew, jNew) = 1;
             wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
             grid.channelFlag(indNew) = true; % mark this cell as now being a channel
