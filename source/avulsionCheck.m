@@ -21,7 +21,7 @@ flowsToCount = sum(grid.flowsToGraph, 1);
 
         k = channelInds(kk);
 
-        if flowsToCount(k) < BRANCH_LIMIT % i.e., if it flows to no more than 1 cell, then eligible for a new avulsion
+        if grid.flowsToCount(k)<2 % i.e., if it flows to no more than 1 cell, then eligible for a new avulsion
             z_i = grid.z(k);
             H_ij = grid.H(k); % listed as "H_ij" in the paper, but I don't understand that notation as it seems to imply depth from i to j; easier to conceive as depth at i
 

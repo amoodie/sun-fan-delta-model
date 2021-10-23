@@ -37,13 +37,13 @@
             theta0 = pi/(2*sqrt(2));  % normalization term
             v = [-3, -2, -1, 0, 1, 2, 3, 4] * (pi/4);  % initialize centerred on step=4
             indDiff = grid.flowsTo{avulsionCellInd} - avulsionCellInd;  % difference in cell indices
-            stepDir = find(grid.iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
+            stepDir = find(iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
             offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
             deltatheta = circshift(v, offset); % rotate the deviations to center at stepDir
-            normfunc0 = exp(-(deltatheta / theta0).^2)';  % the gaussian randomness function
+            normfunc0 = exp(-(deltatheta / theta0).^2);  % the gaussian randomness function
         else
             % it doesn't flow anywhere, so just make all directions equal
-            normfunc0 = ones(8,1);
+            normfunc0 = ones(1,8);
         end
 
         % while there is still non-ocean non-channel non-sink cells to walk
@@ -55,12 +55,12 @@
             forbiddenCells = [avulsionCellInd, indPrev]; % previous location is forbidden
 
             % find the indices of the neighbors and get slopes to there
+%             nghbrs = indCurrent + iwalk;
+%             [iCurrent, jCurrent] = ind2sub(grid.size, indCurrent);
+            
+            % nghbrSlopes = squeeze(grid.S.d8(:, iCurrent, jCurrent));
+            
             nghbrs = indCurrent + iwalk;
-            [iCurrent, jCurrent] = ind2sub(grid.size, indCurrent);
-            
-            nghbrSlopes = squeeze(grid.S.d8(:, iCurrent, jCurrent));
-            
-            nghbrs = indCurrent + grid.iwalk;
             nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
                            grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
                            grid.S.SW(indCurrent) grid.S.W(indCurrent)];
@@ -98,7 +98,7 @@
             end
 
             % set invalid cells in prob to NaN (no necessary since product taken below?)
-            normfunc = normfunc0';
+            normfunc = normfunc0;
             normfunc(isnan(nghbrSlopes)) = NaN;
 
             % make a probability for each neighbor
@@ -112,7 +112,7 @@
             % [~,indNghbrStep] = max(nghbrSlopes);
 
             %% take the step to determine what the new ind will be
-            step = grid.iwalk(indNghbrStep);
+            step = iwalk(indNghbrStep);
             indNew = indCurrent + step;
             [iNew, jNew] = ind2sub(grid.size, indNew);
 

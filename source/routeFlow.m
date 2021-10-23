@@ -23,6 +23,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
         grid.Qw = zeros(grid.size); % initialize grid that stores total water discharge during flow routing
         grid.Qw_toRoute = nan(grid.size); % initialize grid that stores water discharge to route 
         grid.flowsToFrac_Qw_distributed = cell(grid.size); % initialize grid to track fractional distribution of flow at distributaries
+        grid.flowsToFrac(:) = 0;
         alreadyFlowed = zeros(grid.size); % initialize grid to track where flow already visited (looping check)
         
         % To begin the routing, the only cell with flow is the inlet
@@ -47,7 +48,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
         end
         
         %%% ARE THE ARRAYS THE SAME??
-        cnt = sum(grid.flowsFromGraph, 1);
+        cnt = squeeze(sum(grid.flowsFromGraph, 1));
         eql = grid.flowsFromCount == cnt;
         if ~all(eql)
             keyboard()
@@ -80,8 +81,10 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             % there is only 
             cellsIndFlowsTo = grid.flowsTo{cellIndFlowToRoute};
             
-            startsBool = logical(grid.flowsToGraph(:, cellIndFlowToRoute));  % true where flowsTo has channels
-            cellsIndFlowsTo = grid.nghbrs(startsBool, cellIndFlowToRoute);  % the cell indices of the next cells
+            channelsBool = logical(grid.flowsToGraph(:, cellIndFlowToRoute));  % true where flowsTo has channels
+            cellsIndFlowsToA = grid.nghbrs(channelsBool, cellIndFlowToRoute);  % the cell indices of the next cells
+            
+            %cellsIndFlowsToA == cellsIndFlowsTo
             
             if isempty(cellsIndFlowsTo)
                 % doesn't flow anywhere
@@ -94,6 +97,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 grid.Qw(cellsIndFlowsTo) =  grid.Qw(cellsIndFlowsTo) + Qw_routed;
                 % update partitioning information for current cell
                 grid.flowsToFrac_Qw_distributed{cellIndFlowToRoute} = 1; % i.e., all flow distributed to 1 cell
+                grid.flowsToFrac(channelsBool, cellsIndFlowsToA) = 1;
                 % update flow information for current cell to empty
                 grid.Qw_toRoute(cellIndFlowToRoute) = nan;
                 grid.flowedFromSources(cellsIndFlowsTo) = grid.flowedFromSources(cellsIndFlowsTo) + 1;
@@ -138,6 +142,26 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                     branch2.Qw_fractionReceived = 1-branch1.Qw_fractionReceived;
                 end
                 
+                %%%%%%% REIMPLEMENTATION FOR MULTIBRANCHING
+                % look up the slope to each cell
+                branchSlopes = grid.S.d8(channelsBool, cellIndFlowToRoute);
+                if all(branchSlopes < 0)
+                    % all negative
+                    branchFractions = (abs(branchSlopes).^-gamma) / sum(abs(branchSlopes).^-gamma);
+                else
+                    % may be all positive, or some mix of positive and negative and 0
+                    %  Routing is according to Murray and Paola:
+                    %  > The sum, which runs over all the neighbours with 
+                    %  > positive slopes, normalizes the water routing
+                    %  so we set any negative slopes to 0 so that they
+                    %  receive no flow
+                    branchSlopes(branchSlopes < 0) = 0; % 
+                    branchFractions = (branchSlopes.^gamma) / sum(branchSlopes.^gamma);
+                end
+                grid.flowsToFrac(channelsBool, cellIndFlowToRoute) = branchFractions;
+                
+                
+                %%%%%% OLD CODE TO DELETE
                 branch1.Qw_received = Qw_routed*branch1.Qw_fractionReceived;
                 branch2.Qw_received = Qw_routed*branch2.Qw_fractionReceived;
                 
@@ -150,11 +174,26 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 elseif abs(grid.Qw_toRoute(cellIndFlowToRoute) - (branch1.Qw_received + branch2.Qw_received)) > (Qw_mismatch_tolerance)
                     error('Inconsistent mass balance for discharge at distributary junction')
                 end
+                %%%%% END OLD
+                if any(branchFractions < 0)
+                    error('Negative discharge routed at distributary junction')
+                elseif abs(grid.Qw_toRoute(cellIndFlowToRoute) - (Qw_routed * sum(branchFractions))) > (Qw_mismatch_tolerance)
+                    error('Inconsistent mass balance for discharge at distributary junction')
+                end
+               
+                
+                % REIMPLEMENT GRID QW UPDATIGN
+                QwT = grid.Qw;
+                Qw_toRouteT = grid.Qw_toRoute;
+                %%% THE reimped
+                QwT(cellsIndFlowsToA) = Qw_routed * branchFractions;
+                Qw_toRouteT(cellsIndFlowsToA) = sum([Qw_toRouteT(cellsIndFlowsToA), Qw_routed * branchFractions],2,'omitnan');
+                Qw_toRouteT(cellIndFlowToRoute) = nan;
                 
                 % update grid.Qw and grid.Qw_toRoute
                 grid.Qw(branch1.startRow,branch1.startCol) =  grid.Qw(branch1.startRow,branch1.startCol) + branch1.Qw_received;
                 grid.Qw(branch2.startRow,branch2.startCol) =  grid.Qw(branch2.startRow,branch2.startCol) + branch2.Qw_received;
-
+                
                 grid.Qw_toRoute(branch1.startRow,branch1.startCol) = sum([grid.Qw_toRoute(branch1.startRow,branch1.startCol), branch1.Qw_received],'omitnan');
                 grid.Qw_toRoute(branch2.startRow,branch2.startCol) = sum([grid.Qw_toRoute(branch2.startRow,branch2.startCol), branch2.Qw_received],'omitnan');
                 grid.Qw_toRoute(source.row,source.col) = nan;
@@ -167,8 +206,11 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 end
                 
                 % record the flow having gone into each of the cells
+                flowedFromSources = grid.flowedFromSources; %% REIMPLEMENTEAT
+                flowedFromSources(cellsIndFlowsToA) = flowedFromSources(cellsIndFlowsToA) + 1; %% REIMPLEMENTEAT
                 grid.flowedFromSources(branch1.startRow,branch1.startCol) = grid.flowedFromSources(branch1.startRow,branch1.startCol) + 1;
                 grid.flowedFromSources(branch2.startRow,branch2.startCol) = grid.flowedFromSources(branch2.startRow,branch2.startCol) + 1;
+                
             else
                 error('Flow routing: Invalid value for cellsIndFlowsTo');
             end
@@ -218,8 +260,10 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             for i = 1:length(remaining_Qw)
                 remaining_Qw_i = remaining_Qw(i);
                 % find where it flows to, then remove connection to
-                flowsTo_i = grid.flowsTo{remaining_Qw_i};
-                grid.flowsTo{remaining_Qw_i} = [];
+                channelsBool = logical(grid.flowsToGraph(:, remaining_Qw_i));
+                flowsTo_i = grid.flowsTo{remaining_Qw_i};  %%% DELETE ME
+                flowsTo_i = grid.nghbrs(channelsBool, remaining_Qw_i);
+                grid.flowsTo{remaining_Qw_i} = []; %%% DELETE ME
                 grid.flowsToCount(remaining_Qw_i) = grid.flowsToCount(remaining_Qw_i) - 1;
                 grid.flowsToGraph(:, remaining_Qw_i) = 0;
                 % for each place it flows to

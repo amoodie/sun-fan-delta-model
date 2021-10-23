@@ -28,6 +28,10 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
             % else we flow to will has discharge (i.e., is not abandoned)).
             keepidx = (grid.flowsFrom{currentIndex} ~= prevIndex);
             grid.flowsFrom{currentIndex} = grid.flowsFrom{currentIndex}(keepidx);
+            
+            %%%% REFACTORED DELETE THE ABOVE OLD CODE!!
+            disconnectIndex = grid.nghbrs(:, currentIndex) == prevIndex;  % which connection to disconnect
+            grid.flowsFromGraph(disconnectIndex, currentIndex) = 0; % set the disconnectIndex cell to 0 to disconnect it
 
             % check the status of abandonAll to determine whether to stop
             % or continue abandoning along the channel pathway

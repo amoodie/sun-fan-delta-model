@@ -19,40 +19,61 @@ function grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet)
         if i==inlet.row && j==inlet.col
             grid.Qs_in(i,j) = Qs_inlet;
         else
+            %%%% OLD LINE BELOW DELETE 
+            %contributingCells0 = grid.flowsFrom{i,j};
+            
             % look up the contributing cells
-            contributingCells = grid.flowsFrom{i,j};
+            contributingCells = grid.nghbrs(logical(grid.flowsFromGraph(:,k)), k);
+            
+            %%%% BELOW TEMP LINE, DELETE ME, checks for consistent
+            %(contributingCells == contributingCells0);
 
             if numel(contributingCells)==1
                 grid.Qs_in(i,j) = grid.Qs_out(contributingCells);
             elseif numel(contributingCells)>1 % multiple contributing cells
-                for cc=1:numel(contributingCells)
-                    % Sediment routing at network junctions is not explictly
-                    % discussed in the paper. For simplicitly, I assume
-                    % that the sediment discharge is partitioned in the
-                    % same way that water discharge is partitioned.
-
-                    % look up Qs_out at the contributing cell; use the water discharge partition fraction at
-                    % at the tributary to set the partition fraction
-                    % for sediment
-                    Qs_out_fromContributingCell = grid.Qs_out(contributingCells(cc));
-                    % Qs_out_fromContributingCell is sometimes empty:
-                    % if discharge did not reach this location due to routeFlow rules,
-                    % depsite these cells being connected by a channel in the tracking cell arrays.
-                    % We thus include a safety here, to just proceed with the Qs calculation,
-                    % but with 0 sediment contribution from this cell
-                    if Qs_out_fromContributingCell > 0
-                        Qw_fraction_receivedFromContributingCell = grid.flowsToFrac_Qw_distributed{contributingCells(cc)};
-                        [receivingCellRow,receivingCellCol] = ind2sub(grid.size,grid.flowsTo{contributingCells(cc)});
-                        if i==receivingCellRow(1) && j==receivingCellCol(1)
-                            Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(1);
-                        elseif i==receivingCellRow(2) && j==receivingCellCol(2)
-                            Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(2);
-                        else
-                            error('Error in data lookup for contributing cell')
-                        end
-                        grid.Qs_in(i,j) = grid.Qs_in(i,j) + Qs_out_fromContributingCell*Qw_fraction_receivedFromContributingCell;
-                    end
-                end
+                % Sediment routing at network junctions is not explictly
+                % discussed in the paper. For simplicitly, we assume
+                % sediment discharge is partitioned in the same way 
+                % that water discharge is partitioned.
+                Qs_outConnections = grid.Qs_out(contributingCells);  % Qs_out from each contributor
+                channelConnectionBool = (grid.nghbrs(:, contributingCells) == k);  % bool where contributing cells are connected to kth cell
+                flowsToFracConnection = grid.flowsToFrac(:, contributingCells);  % fracs for contributing cells connected to kth cell
+                
+                Qs_in_fromConnections = flowsToFracConnection(channelConnectionBool) .* Qs_outConnections;  % Qs into kth cell from contributing cells
+                
+                % update the field
+                grid.Qs_in(k) = sum(Qs_in_fromConnections);
+                
+%                 %%%% OLD CODE
+%                 for cc=1:numel(contributingCells)
+%                     % Sediment routing at network junctions is not explictly
+%                     % discussed in the paper. For simplicitly, I assume
+%                     % that the sediment discharge is partitioned in the
+%                     % same way that water discharge is partitioned.
+% 
+%                     % look up Qs_out at the contributing cell; use the water discharge partition fraction at
+%                     % at the tributary to set the partition fraction
+%                     % for sediment
+%                     Qs_out_fromContributingCell = grid.Qs_out(contributingCells(cc));
+%                     % Qs_out_fromContributingCell is sometimes empty:
+%                     % if discharge did not reach this location due to routeFlow rules,
+%                     % depsite these cells being connected by a channel in the tracking cell arrays.
+%                     % We thus include a safety here, to just proceed with the Qs calculation,
+%                     % but with 0 sediment contribution from this cell
+%                     if Qs_out_fromContributingCell > 0
+% 
+%                         Qw_fraction_receivedFromContributingCell = grid.flowsToFrac_Qw_distributed{contributingCells(cc)};
+%                         [receivingCellRow,receivingCellCol] = ind2sub(grid.size,grid.flowsTo{contributingCells(cc)});
+%                         if i==receivingCellRow(1) && j==receivingCellCol(1)
+%                             Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(1);
+%                         elseif i==receivingCellRow(2) && j==receivingCellCol(2)
+%                             Qw_fraction_receivedFromContributingCell = Qw_fraction_receivedFromContributingCell(2);
+%                         else
+%                             error('Error in data lookup for contributing cell')
+%                         end
+%                         grid.Qs_in(i,j) = grid.Qs_in(i,j) + Qs_out_fromContributingCell*Qw_fraction_receivedFromContributingCell;
+%                     end
+%                 end
             else
                 % throw error if this cell is flagged as a channel
                 % but there are no contributingCells defined,
@@ -64,9 +85,8 @@ function grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet)
             end
         end
     end
-
-    % set Qs_in, Qs_out to zero for non-channel cells (values are
-    % currently NaN)
+    
+    % set Qs_in, Qs_out to zero for non-channel cells (values are currently NaN)
     grid.Qs_in(~grid.channelFlag)=0;
     grid.Qs_out(~grid.channelFlag)=0;
 
