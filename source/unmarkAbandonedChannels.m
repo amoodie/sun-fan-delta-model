@@ -15,11 +15,6 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
 
     % make a list of all the branches in the domain
     branchCellIndices = find(grid.flowsToCount == 2)';
-    
-    %%% DELETE ME AFTER LOOP CHANGE
-    iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
-                +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
-    %%%
 
     % loop through the branches and check cells downstream of the branch
     % point (i.e., the `flowsTo{branchIndex}`) against the discharge
@@ -48,22 +43,13 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 % track where we entered the current cell *from*, so that
                 % we can unset the correct flowsFrom cell when a cell has
                 % multiple flowsFrom (only one of which is the abandoned
-                % pathway we walked down).
-                %startIndex = grid.flowsTo{branchIndex}(j); % cell index for path starting-point (index of abandoned channel head, not branch)
-                %prevIndex = branchIndex; % cell index for previous cell of path starting-point
-                
-                startIndex = flowsToInds(j);
-                prevIndex = branchIndex;
+                % pathway we walked down).                
+                startIndex = flowsToInds(j); % cell index for path starting-point (index of abandoned channel head, not branch)
+                prevIndex = branchIndex; % cell index for previous cell of path starting-point
 
                 % now, we start to actually do the unsetting and walking.
 
                 % unset flowsTo *at the branch* and update partitioning
-%                 grid.flowsTo{branchIndex} = grid.flowsTo{branchIndex}(1:2 ~= j);
-%                 grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
-
-                % unset flowsTo *at the branch* and update partitioning
-                
-                %%% this is temp code until the loop can be changed
                 which_index = find((startIndex - branchIndex) == grid.iwalk);
                 grid.flowsToGraph(which_index, branchIndex) = 0;
                 grid.flowsToFrac(which_index, branchIndex) = 0;
@@ -71,9 +57,6 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 % renormalize the other outputs to equal 1
                 renorm = grid.flowsToFrac(:, branchIndex) / sum(grid.flowsToFrac(:, branchIndex));
                 grid.flowsToFrac(:, branchIndex) = renorm;
-                
-                
-                % grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
 
                 % recursively walk the channel path and unset anything
                 % that is abandoned (i.e., cells that have no *other*
