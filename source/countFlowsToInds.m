@@ -18,5 +18,13 @@ function [grid] = countFlowsToInds(grid)
         grid.flowsToCount(k) = numel(grid.flowsTo{k});
     end
     
+    flowsToCount = sum(grid.flowsToGraph, 1);
+    
+    if ~all(flowsToCount(grid.channelFlag) == grid.flowsToCount(grid.channelFlag))
+        keyboard
+    end
+    
+%     grid.flowsToCount(grid.channelFlag) = flowsToCount(grid.channelFlag);
+    
 end
 

@@ -59,7 +59,11 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 which_index = find((startIndex - branchIndex) == iwalk);
                 grid.flowsToGraph(which_index, branchIndex) = 0;
                 % grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
-                
+
+                which_index = find((startIndex - branchIndex) == grid.iwalk);
+                grid.flowsToGraph(which_index, branchIndex) = 0;
+                % grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
+
                 % recursively walk the channel path and unset anything
                 % that is abandoned (i.e., cells that have no *other*
                 % `flowsFrom` than the abandoned path.

@@ -46,7 +46,7 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_threshold = 0.05; % water discharge fraction to cut off channels
+Qw_threshold = 0.00000005; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
 
@@ -76,6 +76,8 @@ oceanLevel.z = nan(1,10); % timeseries elevation of ponded water, m (xi_theta in
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
 debugFigure = true;
+
+rng(5)
 
 %%% End of parameters to edit 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

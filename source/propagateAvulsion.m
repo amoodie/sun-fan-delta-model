@@ -37,7 +37,7 @@
             theta0 = pi/(2*sqrt(2));  % normalization term
             v = [-3, -2, -1, 0, 1, 2, 3, 4] * (pi/4);  % initialize centerred on step=4
             indDiff = grid.flowsTo{avulsionCellInd} - avulsionCellInd;  % difference in cell indices
-            stepDir = find(iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
+            stepDir = find(grid.iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
             offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
             deltatheta = circshift(v, offset); % rotate the deviations to center at stepDir
             normfunc0 = exp(-(deltatheta / theta0).^2)';  % the gaussian randomness function
@@ -59,6 +59,16 @@
             [iCurrent, jCurrent] = ind2sub(grid.size, indCurrent);
             
             nghbrSlopes = squeeze(grid.S.d8(:, iCurrent, jCurrent));
+            
+            nghbrs = indCurrent + grid.iwalk;
+            nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
+                           grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
+                           grid.S.SW(indCurrent) grid.S.W(indCurrent)];
+            
+            
+            [iCurrent, jCurrent] = ind2sub(grid.size, indCurrent);
+            
+            %nghbrSlopes = squeeze(grid.S.d8(:, iCurrent, jCurrent));
 
             % add to the list of forbidden cells with the locations that would create crossover channels
             [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs);
@@ -88,7 +98,7 @@
             end
 
             % set invalid cells in prob to NaN (no necessary since product taken below?)
-            normfunc = normfunc0;
+            normfunc = normfunc0';
             normfunc(isnan(nghbrSlopes)) = NaN;
 
             % make a probability for each neighbor
@@ -102,7 +112,7 @@
             % [~,indNghbrStep] = max(nghbrSlopes);
 
             %% take the step to determine what the new ind will be
-            step = iwalk(indNghbrStep);
+            step = grid.iwalk(indNghbrStep);
             indNew = indCurrent + step;
             [iNew, jNew] = ind2sub(grid.size, indNew);
 
@@ -115,6 +125,12 @@
             % make the connection to this new cell
             grid.flowsToGraph(indNghbrStep, iCurrent, jCurrent) = 1;
             grid.flowsFromGraph(toToFrom(indNghbrStep), iNew, jNew) = 1;
+
+            % make the connection to this new cell
+            grid.flowsToGraph(indNghbrStep, iCurrent, jCurrent) = 1;
+            grid.flowsFromGraph(toToFrom(indNghbrStep), iNew, jNew) = 1;
+%             wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
+%             grid.channelFlag(indNew) = true; % mark this cell as now being a channel
 
             %% determine whether the new point is somewhere we want to continue from
 

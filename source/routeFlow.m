@@ -80,6 +80,9 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             % there is only 
             cellsIndFlowsTo = grid.flowsTo{cellIndFlowToRoute};
             
+            startsBool = logical(grid.flowsToGraph(:, cellIndFlowToRoute));  % true where flowsTo has channels
+            cellsIndFlowsTo = grid.nghbrs(startsBool, cellIndFlowToRoute);  % the cell indices of the next cells
+            
             if isempty(cellsIndFlowsTo)
                 % doesn't flow anywhere
                 %   set the current cell to NaN and leave
@@ -218,6 +221,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 flowsTo_i = grid.flowsTo{remaining_Qw_i};
                 grid.flowsTo{remaining_Qw_i} = [];
                 grid.flowsToCount(remaining_Qw_i) = grid.flowsToCount(remaining_Qw_i) - 1;
+                grid.flowsToGraph(:, remaining_Qw_i) = 0;
                 % for each place it flows to
                 for j = 1:length(flowsTo_i)
                     % unset the channels down the path

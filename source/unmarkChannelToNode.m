@@ -74,7 +74,8 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
             % the `newStarts` received flow from.
             startsBool = logical(grid.flowsToGraph(:, currentIndex));  % true where flowsTo has channels
             newStarts = grid.nghbrs(startsBool, currentIndex);  % the cell indices of the next cells
-            %newStarts = grid.flowsTo{currentIndex};
+            
+            newStarts = grid.flowsTo{currentIndex};
             newPrevs = [currentIndex; currentIndex];
 
             % clear info on where this node would go.
@@ -97,6 +98,9 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
             % the pathway
 
             % grab the next step
+
+            nextBool = logical(grid.flowsToGraph(:, currentIndex));  % true where flowsTo goes next
+            nextIndex = grid.nghbrs(nextBool, currentIndex);  % the cell indices of the next cells
             nextIndex = grid.flowsTo{currentIndex};
             
             nextBool = logical(grid.flowsToGraph(:, currentIndex));  % true where flowsTo goes next
