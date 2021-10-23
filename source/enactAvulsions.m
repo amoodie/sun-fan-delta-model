@@ -22,7 +22,7 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
         % flowsFrom cells
         for i=1:grid.size(1)
             for j=1:grid.size(2)
-                if  grid.channelFlag(i,j) && isempty(grid.flowsFrom{i,j}) && ne(i,inlet.row) && ne(j,inlet.col)
+                if  grid.channelFlag(i,j) && (sum(grid.flowsFromGraph(:,i,j)) == 0) && ne(i,inlet.row) && ne(j,inlet.col)
                     error('grid.flowsFrom not defined for channel cell');
                 end
             end
@@ -33,7 +33,7 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
     % flowsFrom cells
     for i=1:grid.size(1)
         for j=1:grid.size(2)
-            if  grid.channelFlag(i,j) && isempty(grid.flowsFrom{i,j}) && ne(i,inlet.row) && ne(j,inlet.col)
+            if  grid.channelFlag(i,j) && (sum(grid.flowsFromGraph(:,i,j)) == 0) && ne(i,inlet.row) && ne(j,inlet.col)
                 error('grid.flowsFrom not defined for channel cell');
             end
         end

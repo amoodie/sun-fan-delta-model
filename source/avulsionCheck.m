@@ -11,7 +11,6 @@ function avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold)
 avulsionCellInds = [];
 
 BRANCH_LIMIT = 2;
-flowsToCount = sum(grid.flowsToGraph, 1);
 
     % determine all the channel locations to loop through
     channelInds = find(grid.channelFlag);

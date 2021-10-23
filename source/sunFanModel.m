@@ -105,14 +105,6 @@ iter = 0;
         
         % compute the flowsToCount for each cell
         grid = countFlowsToInds(grid);
-        
-        %%% ARE THE ARRAYS THE SAME??
-%         cnt = sum(grid.flowsToGraph, 1);
-%         cnt = cnt(grid.channelFlag);
-%         eql = grid.flowsToCount(~isnan(grid.flowsToCount)) == cnt;
-%         if ~all(eql)
-%             keyboard()
-%         end
 
         % route flow to get discharge along each channel
         grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance);

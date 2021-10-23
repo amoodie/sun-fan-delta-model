@@ -28,9 +28,14 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
 
         branchIndex = branchCellIndices(i); % the ith branch index
 
-        % try both pathways against the threshold discharge
-        for j=1:numel(grid.flowsToFrac_Qw_distributed{branchIndex})
-            testDischarge = grid.flowsToFrac_Qw_distributed{branchIndex}(j); % the discharge fraction in the jth branch
+        % try all pathways against the threshold discharge
+        numberFlowsTo = sum(grid.flowsToGraph(:, branchIndex));
+        channelsBool = logical(grid.flowsToGraph(:, branchIndex));
+        flowsToFracs = grid.flowsToFrac(channelsBool, branchIndex);
+        flowsToInds = grid.nghbrs(channelsBool, branchIndex);
+        %flowsToIdxs = find(flowsToFracs);
+        for j=1:numberFlowsTo
+            testDischarge = flowsToFracs(j); % the discharge fraction in the jth branch
             if testDischarge < Qw_threshold
                 % this channel pathway needs to be disconnected and unset
                 % along the channel course.
@@ -44,24 +49,30 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 % we can unset the correct flowsFrom cell when a cell has
                 % multiple flowsFrom (only one of which is the abandoned
                 % pathway we walked down).
-                startIndex = grid.flowsTo{branchIndex}(j); % cell index for path starting-point (index of abandoned channel head, not branch)
-                prevIndex = branchIndex; % cell index for previous cell of path starting-point
+                %startIndex = grid.flowsTo{branchIndex}(j); % cell index for path starting-point (index of abandoned channel head, not branch)
+                %prevIndex = branchIndex; % cell index for previous cell of path starting-point
+                
+                startIndex = flowsToInds(j);
+                prevIndex = branchIndex;
 
                 % now, we start to actually do the unsetting and walking.
 
                 % unset flowsTo *at the branch* and update partitioning
-                grid.flowsTo{branchIndex} = grid.flowsTo{branchIndex}(1:2 ~= j);
-                grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
+%                 grid.flowsTo{branchIndex} = grid.flowsTo{branchIndex}(1:2 ~= j);
+%                 grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
 
                 % unset flowsTo *at the branch* and update partitioning
                 
                 %%% this is temp code until the loop can be changed
-                which_index = find((startIndex - branchIndex) == iwalk);
-                grid.flowsToGraph(which_index, branchIndex) = 0;
-                % grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
-
                 which_index = find((startIndex - branchIndex) == grid.iwalk);
                 grid.flowsToGraph(which_index, branchIndex) = 0;
+                grid.flowsToFrac(which_index, branchIndex) = 0;
+                
+                % renormalize the other outputs to equal 1
+                renorm = grid.flowsToFrac(:, branchIndex) / sum(grid.flowsToFrac(:, branchIndex));
+                grid.flowsToFrac(:, branchIndex) = renorm;
+                
+                
                 % grid.flowsToFrac_Qw_distributed{branchIndex} = 1;
 
                 % recursively walk the channel path and unset anything

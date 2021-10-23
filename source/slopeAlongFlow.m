@@ -24,7 +24,7 @@
             else
                 % if this cell is a channel cell, look up the cell(s) it
                 % flows to
-                flowsTo = grid.flowsTo{k};
+                flowsTo = grid.nghbrs(logical(grid.flowsToGraph(:, k)), k);
                 [ri,ci] = ind2sub(grid.size, k); % row,col of cell i
                 S_temp = nan(size(flowsTo));
                 for l=1:numel(flowsTo)
