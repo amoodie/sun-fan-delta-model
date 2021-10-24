@@ -1,4 +1,4 @@
-    function grid=propagateAvulsion(grid,avulsionCellInd) % nested function
+    function grid=propagateAvulsion(grid,avulsionCellInfo) % nested function
        % propagateAvulsion: creates path for avulsion channel.
         %%% Path selection is implemented following Sun et al., 2005, as best as possible.
         %%% The path is selected towards a steepest descent, but with
@@ -14,7 +14,9 @@
         %%% neighbor cells with the `forbiddenCells` array.
 
         % the current index is the avulsion cell
-        indCurrent = avulsionCellInd;
+        indCurrent = avulsionCellInfo(1);
+        avulsionCellInd = avulsionCellInfo(1);
+        avulsionToExpected = avulsionCellInfo(2);
 
         % `indPrev` is used in the loop to ensure that flow never goes
         % directly back to where it came from. However, to initialize the
@@ -34,8 +36,11 @@
             %   flow was going before avulsion
             theta0 = pi/(2*sqrt(2));  % normalization term
             v = [-3; -2; -1; 0; 1; 2; 3; 4] * (pi/4);  % initialize centerred on step=4
-            %%%% WARNING flowsToIdxs HARDCODED FOR 1 PLACE WHERE FLOWS TO
+            %   get indices of where the flow goes from the avulsion cell
             flowsToIdxs = grid.nghbrs(grid.flowsToGraph(:, avulsionCellInd), avulsionCellInd);
+            %   there may be multiple, choose the steepest for the baseline direction
+            [~, minidx] = min(grid.z(flowsToIdxs));
+            flowsToIdxs = flowsToIdxs(minidx);  % baseline flow direction index
             indDiff = flowsToIdxs - avulsionCellInd;
             stepDir = find(grid.iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
             offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
@@ -53,8 +58,7 @@
 
             % update list of forbiddenCells
             forbiddenCells = [avulsionCellInd; indPrev]; % previous location is forbidden
-            
-            
+
             % get neighbor cell indices and slopes to those cells
             nghbrs = grid.nghbrs(:, indCurrent); 
             nghbrSlopes = squeeze(grid.S.d8(:, indCurrent));

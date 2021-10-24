@@ -57,7 +57,7 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
         % downstream direction. Look at the flowsTo array to find out if
         % this is a branch or conduit or outlet
         numberFlowsTo = sum(grid.flowsToGraph(:, currentIndex));
-        if numberFlowsTo == 2
+        if numberFlowsTo >= 2
             % this cell is a branching cell, so we have to treat
             % specially
 
@@ -76,14 +76,14 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
             newStarts = grid.nghbrs(startsBool, currentIndex);  % the cell indices of the next cells
             
             %newStarts = grid.flowsTo{currentIndex};
-            newPrevs = [currentIndex; currentIndex];
+            newPrevs = currentIndex .* ones(length(newStarts), 1, 'int64');
 
             % clear info on where this node would go.
             % (we already recorded where it would go as newStarts)
             grid.flowsToGraph(:, currentIndex) = 0;
             grid.flowsToFrac(:, currentIndex) = 0;
 
-            for i=1:2
+            for i=1:length(newStarts)
                 % walk each branch, recursively
                 [grid] = unmarkChannelToNode(grid, newStarts(i), newPrevs(i), abandonAll);
             end

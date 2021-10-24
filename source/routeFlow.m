@@ -84,7 +84,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 % update flow information for current cell to empty
                 grid.Qw_toRoute(cellIndFlowToRoute) = nan;
                 grid.flowedFromSources(cellsIndFlowsTo) = grid.flowedFromSources(cellsIndFlowsTo) + 1;
-            elseif numel(cellsIndFlowsTo)==2
+            elseif numel(cellsIndFlowsTo)>=2
                 % flow has reached a distributary junction
 
                 % look up the slope to each cell from precomputed
