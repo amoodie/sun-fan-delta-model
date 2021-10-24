@@ -21,7 +21,7 @@
         % routing, we set the previous index as where the flow is already
         % going, so that this location cannot be the location of the first
         % step
-        indPrev = grid.nghbrs(logical(grid.flowsToGraph(:, avulsionCellInd)), avulsionCellInd);
+        indPrev = grid.nghbrs(grid.flowsToGraph(:, avulsionCellInd), avulsionCellInd);
 
         % configure index stepper based on grid dimensions
         toToFrom = [5, 6, 7, 8, 1, 2, 3, 4]; % convert the direction step to new cell into a step from 
@@ -35,7 +35,7 @@
             theta0 = pi/(2*sqrt(2));  % normalization term
             v = [-3; -2; -1; 0; 1; 2; 3; 4] * (pi/4);  % initialize centerred on step=4
             %%%% WARNING flowsToIdxs HARDCODED FOR 1 PLACE WHERE FLOWS TO
-            flowsToIdxs = grid.nghbrs(logical(grid.flowsToGraph(:, avulsionCellInd)), avulsionCellInd);
+            flowsToIdxs = grid.nghbrs(grid.flowsToGraph(:, avulsionCellInd), avulsionCellInd);
             indDiff = flowsToIdxs - avulsionCellInd;
             stepDir = find(grid.iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
             offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
@@ -52,23 +52,21 @@
             %% while we want to find the next step, find where *might* go
 
             % update list of forbiddenCells
-            forbiddenCells = [avulsionCellInd, indPrev]; % previous location is forbidden
+            forbiddenCells = [avulsionCellInd; indPrev]; % previous location is forbidden
             
-            nghbrs = indCurrent + grid.iwalk;
             
-            %%%%% want to get neighbors out of here
-            % nghbrs = grid.nghbrs(:, indCurrent); 
-            %%%%%
+            % get neighbor cell indices and slopes to those cells
+            nghbrs = grid.nghbrs(:, indCurrent); 
             nghbrSlopes = squeeze(grid.S.d8(:, indCurrent));
 
             % add to the list of forbidden cells with the locations that would create crossover channels
             [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs);
-            forbiddenCells = unique([forbiddenCells, forbiddenCorners]);
+            forbiddenCells = unique([forbiddenCells; forbiddenCorners]);
 
             % prevent the flow from going to any cell that it already
             % receives flow from
-            currentFlowsFrom = grid.nghbrs(logical(grid.flowsFromGraph(:, indCurrent)), indCurrent);
-            forbiddenCells = unique([forbiddenCells, currentFlowsFrom']);
+            currentFlowsFrom = grid.nghbrs(grid.flowsFromGraph(:, indCurrent), indCurrent);
+            forbiddenCells = unique([forbiddenCells; currentFlowsFrom]);
 
             % prevent the flow from going to any cell that is uphill
             nghbrSlopes(nghbrSlopes < 0) = NaN;
@@ -208,25 +206,27 @@ function [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs)
         % check whether any neighbor cells would be out of range of the
         % domain, if they are, there cannot be any cross-over, so we just
         % proceed with the loop
-        if any(ithNghbrs<1) || any(ithNghbrs>numel(grid.z))
+        if any(ithNghbrs<1)
             continue; % continue the loop
         end
         % always check the presence of channels first (faster)
-        if all(grid.channelFlag())
+        if all(grid.channelFlag(ithNghbrs))
             % both constraining cells are channels
             if strcmp(cornerOption, 'connected')
                 % check whether these two constraining cells are actually
                 % connected or are two different channels
-                if any(grid.flowsTo{nghbrs(ithPair(1))} == nghbrs(ithPair(2))) || any(grid.flowsTo{nghbrs(ithPair(2))} == nghbrs(ithPair(1)))
+                first = nghbrs(ithPair(1));
+                second = nghbrs(ithPair(2));
+                firstToSecond = any(grid.nghbrs(grid.flowsToGraph(:, first), first) == second);
+                secondToFirst = any(grid.nghbrs(grid.flowsToGraph(:, second), second) == first);
+                if firstToSecond || secondToFirst
                     % the channel cells are connected
-
-                    % add this corner cell to the list of forbiddenCorners
+                    %   add this corner cell to the list of forbiddenCorners
                     forbiddenCorners(i) = true;
                 end
 
             elseif strcmp(cornerOption, 'present')
                 % doesn't matter if these are connected
-
                 % add this corner to the list of forbiddenCorners
                 forbiddenCorners(i) = true;
 

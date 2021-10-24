@@ -72,7 +72,7 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
             % pathway walks, also need to duplicate the current
             % location (i.e., the branch) as the `newPrevs` of where
             % the `newStarts` received flow from.
-            startsBool = logical(grid.flowsToGraph(:, currentIndex));  % true where flowsTo has channels
+            startsBool = grid.flowsToGraph(:, currentIndex);  % true where flowsTo has channels
             newStarts = grid.nghbrs(startsBool, currentIndex);  % the cell indices of the next cells
             
             %newStarts = grid.flowsTo{currentIndex};
@@ -95,7 +95,7 @@ function [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll)
             % the pathway
 
             % grab the next step
-            nextBool = logical(grid.flowsToGraph(:, currentIndex));  % true where flowsTo goes next
+            nextBool = grid.flowsToGraph(:, currentIndex);  % true where flowsTo goes next
             nextIndex = grid.nghbrs(nextBool, currentIndex);  % the cell indices of the next cells
 
             % now unset the flowsTo, channelFlag, partition

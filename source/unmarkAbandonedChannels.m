@@ -25,7 +25,7 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
 
         % try all pathways against the threshold discharge
         numberFlowsTo = sum(grid.flowsToGraph(:, branchIndex));
-        channelsBool = logical(grid.flowsToGraph(:, branchIndex));
+        channelsBool = grid.flowsToGraph(:, branchIndex);
         flowsToFracs = grid.flowsToFrac(channelsBool, branchIndex);
         flowsToInds = grid.nghbrs(channelsBool, branchIndex);
         %flowsToIdxs = find(flowsToFracs);

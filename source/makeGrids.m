@@ -47,8 +47,8 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
         % create cell arrays with the same size as the elevation grid to
         % store cell connectivity (grid.flowsTo and grid.flowsFrom)
         grid.flowsToCount = zeros(grid.size);
-        grid.flowsToGraph = zeros([8, grid.size], 'int8');
-        grid.flowsFromGraph = zeros([8, grid.size], 'int8');
+        grid.flowsToGraph = false([8, grid.size]);  % store as logical (1 byte per cell)
+        grid.flowsFromGraph = false([8, grid.size]);  % store as logical (1 byte per cell)
         grid.flowsToFrac = zeros([8, grid.size]);
         
         % create grid to label all of the neighbors of every cell

@@ -67,7 +67,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             %   among multiple cells
                 
             % find where this cell is connected to
-            channelsBool = logical(grid.flowsToGraph(:, cellIndFlowToRoute));  % true where flowsTo has channels
+            channelsBool = grid.flowsToGraph(:, cellIndFlowToRoute);  % true where flowsTo has channels
             cellsIndFlowsTo = grid.nghbrs(channelsBool, cellIndFlowToRoute);  % the cell indices of the next cells
 
             if isempty(cellsIndFlowsTo)
@@ -163,20 +163,14 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             % note: this function is recursive. See docstring and
             % `unmarkAbandonedChannels.m` for more information.
             abandonAll = false; % whether another channel stops abandonment or not
-            
-            disp('abandoning!')
-
             % for each remaining cell
             for i = 1:length(remaining_Qw)
                 remaining_Qw_i = remaining_Qw(i);
                 % find where it flows to, then remove connection to
-                channelsBool = logical(grid.flowsToGraph(:, remaining_Qw_i));
-                %flowsTo_i = grid.flowsTo{remaining_Qw_i};  %%% DELETE ME
+                channelsBool = grid.flowsToGraph(:, remaining_Qw_i);
                 flowsTo_i = grid.nghbrs(channelsBool, remaining_Qw_i);
-                %grid.flowsTo{remaining_Qw_i} = []; %%% DELETE ME
-                grid.flowsToCount(remaining_Qw_i) = 0; %grid.flowsToCount(remaining_Qw_i) - 1;
+                grid.flowsToCount(remaining_Qw_i) = 0;
                 grid.flowsToGraph(:, remaining_Qw_i) = 0;
-                %grid.flowsToFrac(:, remaining_Qw_i) = 0;
                 % for each place it flows to
                 for j = 1:length(flowsTo_i)
                     % unset the channels down the path

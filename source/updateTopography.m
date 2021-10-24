@@ -20,7 +20,7 @@ function grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet)
             grid.Qs_in(i,j) = Qs_inlet;
         else
             % look up the contributing cells
-            contributingCells = grid.nghbrs(logical(grid.flowsFromGraph(:,k)), k);
+            contributingCells = grid.nghbrs(grid.flowsFromGraph(:,k), k);
 
             if numel(contributingCells)==1
                 % one input, so takes all of output from contributor
