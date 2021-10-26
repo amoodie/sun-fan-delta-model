@@ -49,6 +49,7 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 Qw_threshold = 0.00000005; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
+branchLimit = 2;
 
 grid.dx = 100; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 100*grid.dx; % side length of square domain, m (named L_b in the paper)
@@ -61,14 +62,14 @@ grid.DEMoptions.noiseAmplitude = 0.001; % meters
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 5; % simulation time, years
+tMax_yr = 10; % simulation time, years
 tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 0.1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
 % boundary conditions
 inlet.row = 1; % set inlet point for water and sediment
-inlet.col = 50;
+inlet.col = 1;
 boundaryCondition = 'closed';
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,10); % times that define start of intervals with a particular ocean level
 oceanLevel.z = nan(1,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
