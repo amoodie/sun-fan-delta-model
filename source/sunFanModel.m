@@ -95,16 +95,13 @@ end
 
 % create a debugging figure if specified
 if debugFigure
-    debugFigureUpdateTime = tStep_sec * 100; % how often to update
+    debugFigureUpdateTime = tStep_sec * 500; % how often to update
     debugFig = figure('Position', [10 10 900 600]);
 end
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 iter = 0;
     for t = startingTime:tStep_sec:tMax_sec
-        
-        % check that the network is valid (and repair/trim) what is not
-        grid=validateNetwork(grid,inlet);
 
         % compute the flowsToCount for each cell
         grid = countFlowsToInds(grid);
@@ -127,7 +124,7 @@ iter = 0;
         end
         
         % update bed elevation along flow paths
-        grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet); 
+        grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet);
         
         % update slope arrays following topography update
         grid = updateSlope(grid,boundaryCondition,t); 

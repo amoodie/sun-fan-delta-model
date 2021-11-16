@@ -1,15 +1,13 @@
     function grid=propagateAvulsion(grid,avulsionCellInd) % nested function
        % propagateAvulsion: creates path for avulsion channel.
-        %%% Deviation from the Sun et al. (2002) model:
-        %%% their approach is weighted toward a steepest
-        %%% descent, with randomness; however, the
-        %%% implementation is ambiguous (particularly how
-        %%% it affects path direction downstream of the
-        %%% avulsion site). Instead implemented the
-        %%% Karssenburg and Bridge (2008) approach that
-        %%% just uses the steepest descent path (their p. 6); I start
-        %%% the path from the detected avulsion destination
-        %%% point. 
+        %%% Path selection is implemented following Sun et al., 2005, as best as possible.
+        %%% The path is selected towards a steepest descent, but with
+        %%% randomness weighted by angle of deviation from the direction of
+        %%% the pre-avulsion flow path. Sun et al implementation is
+        %%% ambiguous in path direction downstream of the avulsion site is
+        %%% chosen; here we use a fixed angle-of-deviation weighting for
+        %%% all steps of path finding, but determine steepness on each step
+        %%% by the local neighborhood.
         %%%
         %%% To prevent single-cell loop and cross-over channel formation
         %%% during avulsion path finding, we restrict flow to certain
@@ -28,6 +26,24 @@
         % configure index stepper based on grid dimensions
         iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
                  +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
+             
+        % configure the probabalistic routing array (theta_ij in paper) based on 
+        % neighboring cells of avulsion site
+        %   Check if the avulsing cell flows anywhere
+        if grid.flowsToCount(avulsionCellInd)
+            % Determine the direction of flow between indCurrent and where 
+            %   flow was going before avulsion
+            theta0 = pi/(2*sqrt(2));  % normalization term
+            v = [-3, -2, -1, 0, 1, 2, 3, 4] * (pi/4);  % initialize centerred on step=4
+            indDiff = grid.flowsTo{avulsionCellInd} - avulsionCellInd;  % difference in cell indices
+            stepDir = find(iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
+            offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
+            deltatheta = circshift(v, offset); % rotate the deviations to center at stepDir
+            normfunc0 = exp(-(deltatheta / theta0).^2);  % the gaussian randomness function
+        else
+            % it doesn't flow anywhere, so just make all directions equal
+            normfunc0 = ones(1,8);
+        end
 
         % while there is still non-ocean non-channel non-sink cells to walk
         continuePropagateAvulsion = true;
@@ -70,11 +86,22 @@
                 break
             end
 
+            % set invalid cells in prob to NaN (no necessary since product taken below?)
+            normfunc = normfunc0;
+            normfunc(isnan(nghbrSlopes)) = NaN;
+
+            % make a probability for each neighbor
+            probs = (nghbrSlopes .* normfunc) / nansum(nghbrSlopes .* normfunc);
+
             % now find the index of the next location that we might visit
-            [~,indSmax] = max(nghbrSlopes);
+            indNghbrStep = find(rand()<=cumsum(probs, 'omitnan'), 1, 'first');
+
+            % note: the following line can be used *instead* for
+            %   steepest descent routing
+            % [~,indNghbrStep] = max(nghbrSlopes);
 
             %% take the step to determine what the new ind will be
-            step = iwalk(indSmax);
+            step = iwalk(indNghbrStep);
             indNew = indCurrent + step;
             [iNew, jNew] = ind2sub(grid.size, indNew);
 
