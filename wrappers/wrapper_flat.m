@@ -46,9 +46,10 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_threshold = 0.05; % water discharge fraction to cut off channels
+Qw_threshold = 0.0000000005; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
+branchLimit = 2;
 
 grid.dx = 100; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 100*grid.dx; % side length of square domain, m (named L_b in the paper)
@@ -57,11 +58,11 @@ grid.yExtent = grid.xExtent; % added separate variabel for side length if y-dime
 grid.DEMoptions.initialSurfaceGeometry.type = 'flat'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
 grid.DEMoptions.initialSurfaceGeometry.minElev = 0; 
 grid.DEMoptions.addNoise = true;
-grid.DEMoptions.noiseAmplitude = 0.001; % meters
+grid.DEMoptions.noiseAmplitude = 0.01; % meters
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 0.5; % simulation time, years
+tMax_yr = 10; % simulation time, years
 tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 0.1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving

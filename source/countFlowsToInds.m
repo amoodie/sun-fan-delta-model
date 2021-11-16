@@ -4,19 +4,11 @@ function [grid] = countFlowsToInds(grid)
     
     % everything starts as NaN
     grid.flowsToCount(:) = NaN; 
-    
-    % loop through channel cells, and determine the number of places it
-    % flowsTo
-    channelInds = find(grid.channelFlag);
-    
-    % loop
-    for kk=1:numel(channelInds)
-        % kth channelInd
-        k = channelInds(kk);
-        
-        % count it
-        grid.flowsToCount(k) = numel(grid.flowsTo{k});
-    end
-    
-end
 
+    % sum down the first axis for all connections
+    flowsToCount = squeeze(sum(grid.flowsToGraph, 1));
+    
+    % only set to count where there are channels (NaN elsewhere)
+    grid.flowsToCount(grid.channelFlag) = flowsToCount(grid.channelFlag);
+
+end

@@ -1,4 +1,4 @@
-    function grid=propagateAvulsion(grid,avulsionCellInd) % nested function
+    function grid=propagateAvulsion(grid,avulsionCellInfo) % nested function
        % propagateAvulsion: creates path for avulsion channel.
         %%% Path selection is implemented following Sun et al., 2005, as best as possible.
         %%% The path is selected towards a steepest descent, but with
@@ -14,18 +14,19 @@
         %%% neighbor cells with the `forbiddenCells` array.
 
         % the current index is the avulsion cell
-        indCurrent = avulsionCellInd;
+        indCurrent = avulsionCellInfo(1);
+        avulsionCellInd = avulsionCellInfo(1);
+        avulsionToExpected = avulsionCellInfo(2);
 
         % `indPrev` is used in the loop to ensure that flow never goes
         % directly back to where it came from. However, to initialize the
         % routing, we set the previous index as where the flow is already
         % going, so that this location cannot be the location of the first
         % step
-        indPrev = grid.flowsTo{avulsionCellInd}';
+        indPrev = grid.nghbrs(grid.flowsToGraph(:, avulsionCellInd), avulsionCellInd);
 
         % configure index stepper based on grid dimensions
-        iwalk = [-grid.size(1)-1, -1, +grid.size(1)-1, ...
-                 +grid.size(1), +grid.size(1)+1, +1, -grid.size(1)+1, -grid.size(1)];
+        toToFrom = [5, 6, 7, 8, 1, 2, 3, 4]; % convert the direction step to new cell into a step from 
              
         % configure the probabalistic routing array (theta_ij in paper) based on 
         % neighboring cells of avulsion site
@@ -34,15 +35,20 @@
             % Determine the direction of flow between indCurrent and where 
             %   flow was going before avulsion
             theta0 = pi/(2*sqrt(2));  % normalization term
-            v = [-3, -2, -1, 0, 1, 2, 3, 4] * (pi/4);  % initialize centerred on step=4
-            indDiff = grid.flowsTo{avulsionCellInd} - avulsionCellInd;  % difference in cell indices
-            stepDir = find(iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
+            v = [-3; -2; -1; 0; 1; 2; 3; 4] * (pi/4);  % initialize centerred on step=4
+            %   get indices of where the flow goes from the avulsion cell
+            flowsToIdxs = grid.nghbrs(grid.flowsToGraph(:, avulsionCellInd), avulsionCellInd);
+            %   there may be multiple, choose the steepest for the baseline direction
+            [~, minidx] = min(grid.z(flowsToIdxs));
+            flowsToIdxs = flowsToIdxs(minidx);  % baseline flow direction index
+            indDiff = flowsToIdxs - avulsionCellInd;
+            stepDir = find(grid.iwalk == indDiff); % which *neighbor index* (1--8) the path is directed to
             offset = (stepDir - 4);  % how much the init v is off from the direction is needs to be centered on
             deltatheta = circshift(v, offset); % rotate the deviations to center at stepDir
             normfunc0 = exp(-(deltatheta / theta0).^2);  % the gaussian randomness function
         else
             % it doesn't flow anywhere, so just make all directions equal
-            normfunc0 = ones(1,8);
+            normfunc0 = ones(8,1);
         end
 
         % while there is still non-ocean non-channel non-sink cells to walk
@@ -51,21 +57,20 @@
             %% while we want to find the next step, find where *might* go
 
             % update list of forbiddenCells
-            forbiddenCells = [avulsionCellInd, indPrev]; % previous location is forbidden
+            forbiddenCells = [avulsionCellInd; indPrev]; % previous location is forbidden
 
-            % find the indices of the neighbors and get slopes to there
-            nghbrs = indCurrent + iwalk;
-            nghbrSlopes = [grid.S.NW(indCurrent) grid.S.N(indCurrent) grid.S.NE(indCurrent) ...
-                           grid.S.E(indCurrent) grid.S.SE(indCurrent) grid.S.S(indCurrent) ...
-                           grid.S.SW(indCurrent) grid.S.W(indCurrent)];
- 
+            % get neighbor cell indices and slopes to those cells
+            nghbrs = grid.nghbrs(:, indCurrent); 
+            nghbrSlopes = squeeze(grid.S.d8(:, indCurrent));
+
             % add to the list of forbidden cells with the locations that would create crossover channels
             [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs);
-            forbiddenCells = unique([forbiddenCells, forbiddenCorners]);
+            forbiddenCells = unique([forbiddenCells; forbiddenCorners]);
 
             % prevent the flow from going to any cell that it already
             % receives flow from
-            forbiddenCells = unique([forbiddenCells, grid.flowsFrom{indCurrent}']);
+            currentFlowsFrom = grid.nghbrs(grid.flowsFromGraph(:, indCurrent), indCurrent);
+            forbiddenCells = unique([forbiddenCells; currentFlowsFrom]);
 
             % prevent the flow from going to any cell that is uphill
             nghbrSlopes(nghbrSlopes < 0) = NaN;
@@ -101,13 +106,13 @@
             % [~,indNghbrStep] = max(nghbrSlopes);
 
             %% take the step to determine what the new ind will be
-            step = iwalk(indNghbrStep);
+            step = grid.iwalk(indNghbrStep);
             indNew = indCurrent + step;
             [iNew, jNew] = ind2sub(grid.size, indNew);
 
             % make the connection to this new cell
-            grid.flowsTo{indCurrent} = [grid.flowsTo{indCurrent}; indNew]; % append new cell to the "flows to" list
-            grid.flowsFrom{indNew} = [grid.flowsFrom{indNew}; indCurrent]; % append source cell to "flows from" list
+            grid.flowsToGraph(indNghbrStep, indCurrent) = 1;
+            grid.flowsFromGraph(toToFrom(indNghbrStep), iNew, jNew) = 1;
             wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
             grid.channelFlag(indNew) = true; % mark this cell as now being a channel
 
@@ -205,25 +210,27 @@ function [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs)
         % check whether any neighbor cells would be out of range of the
         % domain, if they are, there cannot be any cross-over, so we just
         % proceed with the loop
-        if any(ithNghbrs<1) || any(ithNghbrs>grid.size(1)) || any(ithNghbrs<1) || any(ithNghbrs==grid.size(2))
+        if any(ithNghbrs<1)
             continue; % continue the loop
         end
         % always check the presence of channels first (faster)
-        if all(grid.channelFlag())
+        if all(grid.channelFlag(ithNghbrs))
             % both constraining cells are channels
             if strcmp(cornerOption, 'connected')
                 % check whether these two constraining cells are actually
                 % connected or are two different channels
-                if any(grid.flowsTo{nghbrs(ithPair(1))} == nghbrs(ithPair(2))) || any(grid.flowsTo{nghbrs(ithPair(2))} == nghbrs(ithPair(1)))
+                first = nghbrs(ithPair(1));
+                second = nghbrs(ithPair(2));
+                firstToSecond = any(grid.nghbrs(grid.flowsToGraph(:, first), first) == second);
+                secondToFirst = any(grid.nghbrs(grid.flowsToGraph(:, second), second) == first);
+                if firstToSecond || secondToFirst
                     % the channel cells are connected
-
-                    % add this corner cell to the list of forbiddenCorners
+                    %   add this corner cell to the list of forbiddenCorners
                     forbiddenCorners(i) = true;
                 end
 
             elseif strcmp(cornerOption, 'present')
                 % doesn't matter if these are connected
-
                 % add this corner to the list of forbiddenCorners
                 forbiddenCorners(i) = true;
 

@@ -32,6 +32,7 @@ Qw_inlet = parameters.Qw_inlet;
 Qs_inlet = parameters.Qs_inlet;
 Qw_threshold = parameters.Qw_threshold;
 Qs_threshold = parameters.Qs_threshold;
+branchLimit = parameters.branchLimit;
 Qw_mismatch_tolerance = parameters.Qw_mismatch_tolerance; 
 D = parameters.D; 
 oceanLevel = parameters.oceanLevel;
@@ -95,14 +96,14 @@ end
 
 % create a debugging figure if specified
 if debugFigure
-    debugFigureUpdateTime = tStep_sec * 500; % how often to update
+    debugFigureUpdateTime = tStep_sec * 100; % how often to update
     debugFig = figure('Position', [10 10 900 600]);
 end
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 iter = 0;
     for t = startingTime:tStep_sec:tMax_sec
-
+        
         % compute the flowsToCount for each cell
         grid = countFlowsToInds(grid);
 
@@ -145,7 +146,7 @@ iter = 0;
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
-        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold);
+        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold,branchLimit);
         
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths
