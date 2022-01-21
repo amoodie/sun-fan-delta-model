@@ -37,12 +37,19 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
                     channelDepthColumn((rowSlopeBreak-len+1):rowSlopeBreak) = channelDepthTaperDownstream;
                     grid.z(rows,col)= grid.z(rows,col) - channelDepthColumn;
                 end
+            case 'slope'
+                % create one constant slope through the whole domain
+                zVec=(1:grid.size(1))'*grid.dx*grid.DEMoptions.slope.slope;
+                zVec = zVec + grid.DEMoptions.initialSurfaceGeometry.minElev - min(zVec);  % set to min at minElev
+                grid.z = repmat(zVec,1,grid.size(2));
         end
         
         if grid.DEMoptions.addNoise
             % Add random noise 
             grid.z = grid.z + grid.DEMoptions.noiseAmplitude*rand(grid.size);
         end
+        
+        grid.z0 = grid.z;
 
         % create cell arrays with the same size as the elevation grid to
         % store cell connectivity (grid.flowsTo and grid.flowsFrom)
