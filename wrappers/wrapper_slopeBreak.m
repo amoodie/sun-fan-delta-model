@@ -52,7 +52,7 @@ Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for ena
 
 grid.dx = 100; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 100*grid.dx; % side length of square domain, m (named L_b in the paper)
-grid.yExtent = grid.xExtent; % added separate variabel for side length if y-dimension of grid
+grid.yExtent = 3*grid.xExtent; % added separate variabel for side length if y-dimension of grid
 % Parameters for initial topography (can add additional options here)
 grid.DEMoptions.initialSurfaceGeometry.type = 'slopeBreak'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
 grid.DEMoptions.initialSurfaceGeometry.minElev = 0; 
@@ -67,8 +67,8 @@ grid.DEMoptions.slopeBreak.slope2 = -0.001; % slope below slope break
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 5; % simulation time, years
-tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
+tMax_yr = 0.30; % simulation time, years
+tStep_yr = 1e-3; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 0.1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
@@ -79,9 +79,12 @@ boundaryCondition = 'closed';
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,10); % times that define start of intervals with a particular ocean level
 oceanLevel.z = linspace(8,8,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
 
+grid.frozenCells = false(101, 101);
+grid.frozenCells(inlet.row, inlet.col) = true;
+
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
-debugFigure = true;
+debugFigure = false;
 
 %%% End of parameters to edit 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

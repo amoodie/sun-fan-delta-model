@@ -4,9 +4,10 @@ function [fig] = updateDebugFigure(fig, grid)
     sp1 = subplot(2, 3, 1);
     sp2 = subplot(2, 3, 2);
     sp3 = subplot(2, 3, 3);
-    sp4 = subplot(2, 3, 4);
-    sp5 = subplot(2, 3, 5);
-    sp6 = subplot(2, 3, 6);
+%     sp4 = subplot(2, 3, 4);
+%     sp5 = subplot(2, 3, 5);
+%     sp6 = subplot(2, 3, 6);
+    sp4 = subplot(2, 3, 4:6);
 
     subplot(sp1); hold on; cla;
         imagesc(grid.z);
@@ -36,20 +37,26 @@ function [fig] = updateDebugFigure(fig, grid)
         colormap(sp3, 'winter');
         title('stage');
 
-    subplot(sp4); cla;
-        imagesc(grid.S.alongFlow);
-        colormap(sp4);
-        title('slope');
-
-    subplot(sp5); cla;
-        imagesc(grid.Qw);
-        colormap(sp5, 'cool');
-        title('Qw');
-
-    subplot(sp6); cla;
-        imagesc(grid.channelFlag);
-        colormap(sp6, 'gray');
-        title('channelFlag');
+%     subplot(sp4); cla;
+%         imagesc(grid.S.alongFlow);
+%         colormap(sp4);
+%         title('slope');
+% 
+%     subplot(sp5); cla;
+%         imagesc(grid.Qw);
+%         colormap(sp5, 'cool');
+%         title('Qw');
+% 
+%     subplot(sp6); cla;
+%         imagesc(grid.channelFlag);
+%         colormap(sp6, 'gray');
+%         title('channelFlag');
+    
+    subplot(sp4); cla; hold on;
+        plot(grid.z0(:, 50), 'k-')
+        plot(grid.z(:, 50), 'Color', [0.6 0.6 0.6])
+        plot(grid.z(:, 52), 'Color', [0.6 0.6 0.6])
+        plot(grid.z(:, 48), 'Color', [0.6 0.6 0.6])
 
     drawnow
 

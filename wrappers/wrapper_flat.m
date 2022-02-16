@@ -61,7 +61,7 @@ grid.DEMoptions.noiseAmplitude = 0.001; % meters
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 0.5; % simulation time, years
+tMax_yr = 100; % simulation time, years
 tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 0.1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
@@ -75,7 +75,7 @@ oceanLevel.z = linspace(2,2,10); % timeseries elevation of ponded water, m (xi_t
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
-debugFigure = true;
+debugFigure = false;
 
 % set a rng seed for reproducible timing
 rng(1)
