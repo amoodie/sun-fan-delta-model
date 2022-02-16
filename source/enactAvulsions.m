@@ -13,29 +13,23 @@ function grid = enactAvulsions(avulsionCellInds,grid,inlet)
     grid.sinkFlag = (grid.zFill - grid.z) > eps;
 
     % loop through each cell identified for avulsion
-    for navul=1:numel(avulsionCellInds)
+    numAvulsions = size(avulsionCellInds, 1);
+    for navul=1:numAvulsions
 
         % propogate the avulsion from the cell ind
-        grid=propagateAvulsion(grid,avulsionCellInds(navul));
-
-        % check that all cells flagged as channels have defined
-        % flowsFrom cells
-        for i=1:grid.size(1)
-            for j=1:grid.size(2)
-                if  grid.channelFlag(i,j) && isempty(grid.flowsFrom{i,j}) && ne(i,inlet.row) && ne(j,inlet.col)
-                    error('grid.flowsFrom not defined for channel cell');
-                end
-            end
-        end
+        grid=propagateAvulsion(grid,avulsionCellInds(navul,:));
     end
 
     % check that all cells flagged as channels have defined
-    % flowsFrom cells
-    for i=1:grid.size(1)
-        for j=1:grid.size(2)
-            if  grid.channelFlag(i,j) && isempty(grid.flowsFrom{i,j}) && ne(i,inlet.row) && ne(j,inlet.col)
-                error('grid.flowsFrom not defined for channel cell');
-            end
+    %    flowsFrom cells
+    channelInds = find(grid.channelFlag);
+    % unmark the inlet
+    inlet_ind = sub2ind(grid.size, inlet.row, inlet.col);
+    channelInds(channelInds == inlet_ind) = [];
+    for kk=1:numel(channelInds)
+        k = channelInds(kk);
+        if  grid.channelFlag(k) && (sum(grid.flowsFromGraph(:,k)) == 0)
+            error('grid.flowsFrom not defined for channel cell');
         end
     end
 

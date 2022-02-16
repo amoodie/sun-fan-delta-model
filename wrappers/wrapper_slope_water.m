@@ -8,7 +8,7 @@ loadCheckpoint = false;  % false | filename
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Start of parameters to edit
-runName = 'flat_nowater'; % base name for run and file output
+runName = 'sloped_water'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
 
 % add the model source folder to the path
@@ -23,7 +23,7 @@ alpha_so = 11.25; % from Table 1
 alpha_sa = 1; % from Table 1
 alpha_r = 15; % from Table 1
 alpha_b = 2.97; % from Table 1
-tauStar_c = 0; % % from Table 1. This parameter is important and was set to 0 in Sun et al. (2002) because in
+tauStar_c = 0; % from Table 1. This parameter is important and was set to 0 in Sun et al. (2002) because in
 % that case deposition was always triggered by a standing water body.
 % However, the paper assumes that tau* is always above critical (see eqn.
 % 9). May need to modify this condition in some way to enable deposition -
@@ -37,16 +37,14 @@ gamma = 0.5; % from Table 1
 lambda = 0.4; % from Table 1
 beta = 1; % from Table 1
 
-% Dimensioned parameters specified in the paper
-Qw_inlet = 20; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
-Qs_inlet = 0.04; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
+% some dimensional params
 D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 
 %%% Additional parameters. Some are implicit or unspecified in the paper;
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_threshold = 0.00000005; % water discharge fraction to cut off channels
+Qw_threshold = 0.0000000005; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
 branchLimit = 2;
@@ -55,36 +53,42 @@ grid.dx = 100; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 100*grid.dx; % side length of square domain, m (named L_b in the paper)
 grid.yExtent = grid.xExtent; % added separate variabel for side length if y-dimension of grid
 % Parameters for initial topography (can add additional options here)
-grid.DEMoptions.initialSurfaceGeometry.type = 'flat'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
+grid.DEMoptions.initialSurfaceGeometry.type = 'slope'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
 grid.DEMoptions.initialSurfaceGeometry.minElev = 0; 
 grid.DEMoptions.addNoise = true;
-grid.DEMoptions.noiseAmplitude = 0.001; % meters
+grid.DEMoptions.noiseAmplitude = 0.01; % meters
+grid.DEMoptions.slope.slope = -0.001; % slope below slope break
+
+% Dimensioned parameters specified in the paper
+Qw_inlet = 20; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
+Qs_inlet = 0.04; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 10; % simulation time, years
+tMax_yr = 100; % simulation time, years
 tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
-tSaveInterval_yr = 0.1; % time interval for saving data to file, years
+tSaveInterval_yr = 0.5; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
 % boundary conditions
 inlet.row = 1; % set inlet point for water and sediment
-inlet.col = 1;
+inlet.col = 50;
 boundaryCondition = 'closed';
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,10); % times that define start of intervals with a particular ocean level
-oceanLevel.z = nan(1,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
+oceanLevel.z = 7*ones(1,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
-debugFigure = true;
+debugFigure = false;
 
-rng(5)
+% set a rng seed for reproducible timing
+rng(1)
 
 %%% End of parameters to edit 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % define name for output directory
-outputDir = fullfile('.','output',runName);
+outputDir = fullfile('.','..','output',runName);
 
 % adjust time parameters for use in model execution
 tMax_yr = tStep_yr*ceil(tMax_yr/tStep_yr);% adjust tMax so that the value is reached in an integer number of time steps

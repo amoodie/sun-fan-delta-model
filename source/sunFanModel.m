@@ -32,6 +32,7 @@ Qw_inlet = parameters.Qw_inlet;
 Qs_inlet = parameters.Qs_inlet;
 Qw_threshold = parameters.Qw_threshold;
 Qs_threshold = parameters.Qs_threshold;
+branchLimit = parameters.branchLimit;
 Qw_mismatch_tolerance = parameters.Qw_mismatch_tolerance; 
 D = parameters.D; 
 oceanLevel = parameters.oceanLevel;
@@ -103,9 +104,6 @@ end
 iter = 0;
     for t = startingTime:tStep_sec:tMax_sec
         
-        % check that the network is valid (and repair/trim) what is not
-        grid=validateNetwork(grid,inlet);
-
         % compute the flowsToCount for each cell
         grid = countFlowsToInds(grid);
 
@@ -127,7 +125,7 @@ iter = 0;
         end
         
         % update bed elevation along flow paths
-        grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet); 
+        grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet);
         
         % update slope arrays following topography update
         grid = updateSlope(grid,boundaryCondition,t); 
@@ -148,7 +146,7 @@ iter = 0;
         
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
-        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold);
+        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold,branchLimit);
         
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths

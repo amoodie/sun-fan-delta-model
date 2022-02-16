@@ -46,7 +46,7 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_threshold = 0.05; % water discharge fraction to cut off channels
+Qw_threshold = 0.00005; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
 
@@ -67,8 +67,8 @@ grid.DEMoptions.slopeBreak.slope2 = -0.001; % slope below slope break
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 0.30; % simulation time, years
-tStep_yr = 1e-3; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
+tMax_yr = 50; % simulation time, years
+tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 0.1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
