@@ -21,12 +21,17 @@ function [fig] = updateDebugFigure(fig, grid)
         sp1.YDir = 'reverse';
         xlim([0.5, grid.size(2)+0.5])
         ylim([0.5, grid.size(1)+0.5])
+        axis equal
 
     subplot(sp2); cla;
         imagesc(grid.deltaz);
         colormap(sp2, 'turbo');
         caxis([-1e-4, 1e-4]);
         title('bed change');
+        sp1.YDir = 'reverse';
+        xlim([0.5, grid.size(2)+0.5])
+        ylim([0.5, grid.size(1)+0.5])
+        axis equal
 
     subplot(sp3); cla;
         stage = grid.H;
@@ -36,6 +41,10 @@ function [fig] = updateDebugFigure(fig, grid)
 %         caxis([min(min(stage)), upperlim])
         colormap(sp3, 'winter');
         title('stage');
+        sp1.YDir = 'reverse';
+        xlim([0.5, grid.size(2)+0.5])
+        ylim([0.5, grid.size(1)+0.5])
+        axis equal
 
 %     subplot(sp4); cla;
 %         imagesc(grid.S.alongFlow);
@@ -53,10 +62,10 @@ function [fig] = updateDebugFigure(fig, grid)
 %         title('channelFlag');
     
     subplot(sp4); cla; hold on;
-        plot(grid.z0(:, 50), 'k-')
-        plot(grid.z(:, 50), 'Color', [0.6 0.6 0.6])
-        plot(grid.z(:, 52), 'Color', [0.6 0.6 0.6])
-        plot(grid.z(:, 48), 'Color', [0.6 0.6 0.6])
+        plot(grid.z0(:, 100), 'k-')
+        plot(grid.z(:, 100), 'Color', [0.6 0.6 0.6])
+        plot(grid.z(:, 102), 'Color', [0.6 0.6 0.6])
+        plot(grid.z(:, 98), 'Color', [0.6 0.6 0.6])
 
     drawnow
 
