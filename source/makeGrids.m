@@ -1,4 +1,4 @@
-function grid =  makeGrids(grid,oceanLevel) % nested function
+function grid =  makeGrids(grid,inlet,oceanLevel) % nested function
     % makeGrids: generates elevation and other grids.   
      
         grid.xVec = 0:grid.dx:grid.xExtent; % vector of x-coordinates of grid, m
@@ -49,7 +49,10 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
             grid.z = grid.z + grid.DEMoptions.noiseAmplitude*rand(grid.size);
         end
         
-        grid.z0 = grid.z;
+        % create grids to track elevation change (mass balance checks)
+        grid.z0 = grid.z;  % initial elevation, never changes
+        grid.deltaz = zeros(grid.size);  % elevation change, each timestep
+        grid.cumulativeMassFluxOut = 0;  % cumulative mass leaving domain
 
         % create cell arrays with the same size as the elevation grid to
         % store cell connectivity (grid.flowsTo and grid.flowsFrom)
@@ -78,6 +81,19 @@ function grid =  makeGrids(grid,oceanLevel) % nested function
         
         % create grids to flag other attributes
         grid.oceanFlag = grid.z<=oceanLevel.z(1); % flag to identify whether a cell is in the ocean, using initial ocean level.
+        grid.oceanLevel = oceanLevel.z(1);
         grid.channelFlag = false(grid.size); % flag to identify whether a cell is part of a channel
+        
+        % flag grid cell with inlet as a channel cell
+        grid.channelFlag(inlet.row,inlet.col) = true;
+        grid.inletCell = sub2ind(size(grid.x),inlet.row,inlet.col);
+        
+        % create a grid cell_type
+        %   0 - domain cell
+        %   1 - edge cell
+        %   2 - inlet cell
+        grid.cell_type = zeros(grid.size);
+        grid.cell_type(:,1) = 1; grid.cell_type(:,end) = 1; grid.cell_type(end,:) = 1;
+        grid.cell_type(grid.inletCell) = 2;
     end
     

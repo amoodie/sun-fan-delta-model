@@ -80,7 +80,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
                 grid.Qw_toRoute(cellsIndFlowsTo) = sum([grid.Qw_toRoute(cellsIndFlowsTo),Qw_routed],'omitnan');
                 grid.Qw(cellsIndFlowsTo) = grid.Qw(cellsIndFlowsTo) + Qw_routed;
                 % update partitioning information for current cell
-                grid.flowsToFrac(channelsBool, cellsIndFlowsTo) = 1;
+                grid.flowsToFrac(channelsBool, cellIndFlowToRoute) = 1;
                 % update flow information for current cell to empty
                 grid.Qw_toRoute(cellIndFlowToRoute) = nan;
                 grid.flowedFromSources(cellsIndFlowsTo) = grid.flowedFromSources(cellsIndFlowsTo) + 1;
