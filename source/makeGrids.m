@@ -92,8 +92,8 @@ function grid =  makeGrids(grid,inlet,oceanLevel) % nested function
         %   0 - domain cell
         %   1 - edge cell
         %   2 - inlet cell
-        grid.cell_type = zeros(grid.size);
-        grid.cell_type(:,1) = 1; grid.cell_type(:,end) = 1; grid.cell_type(end,:) = 1;
-        grid.cell_type(grid.inletCell) = 2;
+        grid.cellType = zeros(grid.size);
+        grid.cellType(:,1) = 1; grid.cellType(:,end) = 1; grid.cellType(end,:) = 1;
+        grid.cellType(grid.inletCell) = 2;
     end
     
