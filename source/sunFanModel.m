@@ -67,17 +67,10 @@ filename = fullfile(outputDir,[runName,'_parameters.mat']);
 save(filename,'parameters')
 
 % Create grid for elevation and cell connectedness, and grids of flags for channel cells, ocean cells
-grid =  makeGrids(grid,oceanLevel);
+grid =  makeGrids(grid,inlet,oceanLevel);
 
 % update slope, stored in 'grid'
 grid = updateSlope(grid,boundaryCondition,t);
-
-% flag grid cell with inlet as a channel cell
-grid.channelFlag(inlet.row,inlet.col) = true;
-grid.inletCell = sub2ind(size(grid.x),inlet.row,inlet.col);
-
-% create grid to track elevation change in the last time step
-grid.deltaz = zeros(grid.size); 
 
 % handle loading the checkpoint, or creating the new output files
 if ischar(loadCheckpoint)
@@ -125,7 +118,7 @@ iter = 0;
         end
         
         % update bed elevation along flow paths
-        grid = updateTopography(grid,inlet,lambda,tStep_sec,Qs_inlet);
+        grid = updateTopography(grid,lambda,tStep_sec,Qs_inlet);
         
         % update slope arrays following topography update
         grid = updateSlope(grid,boundaryCondition,t); 
