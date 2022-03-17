@@ -8,7 +8,7 @@ loadCheckpoint = false;  % false | filename
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Start of parameters to edit
-runName = 'sloped_run1'; % base name for run and file output
+runName = 'sloped_run0'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
 
 % add the model source folder to the path
@@ -73,7 +73,7 @@ inlet.row = 1; % set inlet point for water and sediment
 inlet.col = 100;
 boundaryCondition = 'closed';
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,10); % times that define start of intervals with a particular ocean level
-oceanLevel.z = -1*grid.DEMoptions.slope.slope * grid.yExtent * 1 * ones(1,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
+oceanLevel.z = nan(1,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
