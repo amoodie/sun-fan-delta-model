@@ -13,7 +13,7 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
       %%% `~isnan(Qw_toRoute)` and `readyToFlow`, where `readyToFlow` is
       %%% true when a cell has received flow from all upstream cells. A
       %%% cell is also limited to only flow once, by checking if it has
-      %%% `alreadyFlowed`; this check prevents loops in the network from
+      %%% `notAlreadyFlowed`; this check prevents loops in the network from
       %%% recursion, but may lead to flow becoming trapped within the
       %%% network. In these cases, the network loop is trimmed out, so that
       %%% there is no loop on the next timestep.
@@ -23,7 +23,9 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
         grid.Qw = zeros(grid.size); % initialize grid that stores total water discharge during flow routing
         grid.Qw_toRoute = nan(grid.size); % initialize grid that stores water discharge to route
         grid.flowsToFrac(:) = 0;  % rezero grid to track fractional distribution of flow at distributaries
-        alreadyFlowed = zeros(grid.size); % initialize grid to track where flow already visited (looping check)
+        notAlreadyFlowed = ones(grid.size); % initialize grid to track where flow has 
+                                            %    not already flowed from. This is essential
+                                            %    to preventing looping in the network
         
         % To begin the routing, the only cell with flow is the inlet
         % cell; specify that discharge in Qw_grid
@@ -129,7 +131,8 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             end
 
             % update the status of the loop checking array for the current cell
-            alreadyFlowed(cellIndFlowToRoute) = 1;
+            %   set notAlreadyFlowed to false: this cell *has* flowed
+            notAlreadyFlowed(cellIndFlowToRoute) = 0;
 
             % update list of cells from which to route flow for next iteration
             %   find where there is water to route
@@ -138,8 +141,6 @@ function grid=routeFlow(grid,inlet,Qw_inlet,gamma,Qw_mismatch_tolerance)
             hasSources = (grid.flowedFromSources == grid.flowsFromCount);
             % find where a cell is ready to flow
             readyToFlow = and(hasFlow,hasSources);
-            % places that haven't already been flowed (prevents loops)
-            notAlreadyFlowed = ~(alreadyFlowed);  % prevents loops
 
             % choose the next cell to flow as any one that is ready to
             %    flow, but hasn't already flowed
