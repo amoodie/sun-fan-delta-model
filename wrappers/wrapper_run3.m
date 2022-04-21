@@ -8,7 +8,7 @@ loadCheckpoint = false;  % false | filename
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Start of parameters to edit
-runName = 'sloped_run3'; % base name for run and file output
+runName = 'run3'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
 
 % add the model source folder to the path
@@ -16,7 +16,7 @@ codeDir = genpath(fullfile('.','..','source'));
 addpath(codeDir); % add source
 
 % dimensional parameter constant set
-con = loadConstants('mars-quartz-water');
+con = loadConstants('mars-basalt-water');
 
 % Dimensionless parameters specified in the paper
 alpha_so = 11.25; % from Table 1
@@ -44,11 +44,11 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_inlet = 1000; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
-Qs_inlet = 2; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
-Qw_threshold = 0.0000000005; % water discharge fraction to cut off channels
+Qw_inlet = 5000; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
+Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
+Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
-Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
+Qs_threshold = Qs_inlet * 0; % threshold amount of sediment transport for enacting an avulsion at cell
 branchLimit = 8;
 
 grid.dx = 500; % grid spacing, m (named "a" in the paper)
@@ -58,37 +58,51 @@ grid.yExtent = grid.xExtent / 2; % added separate variabel for side length if y-
 grid.DEMoptions.initialSurfaceGeometry.type = 'slope'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
 grid.DEMoptions.initialSurfaceGeometry.minElev = 0; 
 grid.DEMoptions.addNoise = true;
-grid.DEMoptions.noiseAmplitude = 0.001; % meters
+grid.DEMoptions.noiseAmplitude = 1; % meters
 grid.DEMoptions.slope.slope = -0.00083; % slope below slope break
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 100; % simulation time, years
-tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
-tSaveInterval_yr = 0.5; % time interval for saving data to file, years
+tMax_yr = 500; % simulation time, years
+tStep_yr = 1e-3; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
+tSaveInterval_yr = 1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
 % boundary conditions
 inlet.row = 1; % set inlet point for water and sediment
 inlet.col = 100;
 boundaryCondition = 'closed';
-oceanLevel.steps = 500;
+
+% timeseries elevation of ponded water, m (xi_theta in the paper). 
+%   configure oceanLevel.timeStart_yr and oceanLevel.z to be the same
+%   length, and jointly defining the water level curve. In the model,
+%   water level is discretized by this curve, so choose a sufficient number
+%   of steps that the curve is well defined and changing at least a few
+%   times per year.
+oceanLevel.steps = 1000;
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,oceanLevel.steps); % times that define start of intervals with a particular ocean level
-z0 = -1*grid.DEMoptions.slope.slope * grid.yExtent + grid.DEMoptions.initialSurfaceGeometry.minElev;
-t0 = floor(oceanLevel.steps / 5) * 2;
-zend = grid.DEMoptions.initialSurfaceGeometry.minElev;
-tend = floor(oceanLevel.steps / 5) * 3;
+ntChunk = 5; % how to break up the fall and flats
+tChunk = floor(oceanLevel.steps / ntChunk);  % duration of each chunk
+zStartWater = -1*grid.DEMoptions.slope.slope * (grid.yExtent-grid.dx) + grid.DEMoptions.initialSurfaceGeometry.minElev;
+tStartFall = 1;  % measured in tChunks
+tFallTime = ntChunk - tStartFall; % measured in tChunks
+% define a rate, then step down at this rate, then replace everything below
+%    minimum with NaN
+oceanLevel.fallRate = 0.5; % m/yr
+zEndIfInf = zStartWater - ((oceanLevel.fallRate * (tMax_yr / oceanLevel.steps)) * tChunk * tFallTime);  % if rate continued until end of run
+% define and fill the z array
+t0 = tStartFall*tChunk;
 oceanLevel.z = ones(oceanLevel.steps, 1);
-oceanLevel.z(1:t0) = z0;
-oceanLevel.z(tend+1:end) = zend;
-oceanLevel.z(t0+1:tend) = linspace(z0, zend, floor(oceanLevel.steps / 5) * 1); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.
+oceanLevel.z(1:t0) = zStartWater;
+oceanLevel.z(t0+1:end) = linspace(zStartWater, zEndIfInf, tChunk * tFallTime);
+oceanLevel.z(oceanLevel.z < grid.DEMoptions.initialSurfaceGeometry.minElev) = NaN;
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
 debugFigure = false;
 
 % set a rng seed for reproducible timing
-rng(1)
+% rng(1)
 
 %%% End of parameters to edit 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
