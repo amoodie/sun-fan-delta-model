@@ -33,3 +33,5 @@ octave-workspace
 # model output folders
 output/
 
+# hide wrappers, they need to be added with -f
+wrappers/
