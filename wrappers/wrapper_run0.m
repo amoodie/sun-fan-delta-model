@@ -8,7 +8,7 @@ loadCheckpoint = false;  % false | filename
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Start of parameters to edit
-runName = 'sloped_run0'; % base name for run and file output
+runName = 'run0'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
 
 % add the model source folder to the path
@@ -16,7 +16,7 @@ codeDir = genpath(fullfile('.','..','source'));
 addpath(codeDir); % add source
 
 % dimensional parameter constant set
-con = loadConstants('mars-quartz-water');
+con = loadConstants('mars-basalt-water');
 
 % Dimensionless parameters specified in the paper
 alpha_so = 11.25; % from Table 1
@@ -44,12 +44,12 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_inlet = 1000; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
-Qs_inlet = 2; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
-Qw_threshold = 0.0000000005; % water discharge fraction to cut off channels
+Qw_inlet = 5000; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
+Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
+Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
-Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
-branchLimit = 8;
+Qs_threshold = Qs_inlet * 0.05; % threshold amount of sediment transport for enacting an avulsion at cell
+branchLimit = 2;
 
 grid.dx = 500; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 200*grid.dx; % side length of square domain, m (named L_b in the paper)
@@ -58,14 +58,14 @@ grid.yExtent = grid.xExtent / 2; % added separate variabel for side length if y-
 grid.DEMoptions.initialSurfaceGeometry.type = 'slope'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
 grid.DEMoptions.initialSurfaceGeometry.minElev = 0; 
 grid.DEMoptions.addNoise = true;
-grid.DEMoptions.noiseAmplitude = 0.001; % meters
+grid.DEMoptions.noiseAmplitude = 0.1; % meters
 grid.DEMoptions.slope.slope = -0.00083; % slope below slope break
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 100; % simulation time, years
-tStep_yr = 1e-4; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
-tSaveInterval_yr = 0.5; % time interval for saving data to file, years
+tMax_yr = 500; % simulation time, years
+tStep_yr = 1e-3; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
+tSaveInterval_yr = 1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
 % boundary conditions
@@ -77,7 +77,7 @@ oceanLevel.z = nan(1,10); % timeseries elevation of ponded water, m (xi_theta in
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
-debugFigure = false;
+debugFigure = true;
 
 % set a rng seed for reproducible timing
 rng(1)

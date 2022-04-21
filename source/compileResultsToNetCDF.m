@@ -30,17 +30,7 @@ function compileResultsToNetCDF(resultsFolder)
          
     colMajorDims = [dim_time, dim_length, dim_width];
     rowMajorDims = fliplr(colMajorDims);
-    
-    var_x = netcdf.defVar(ncid,'x','float',[dim_length, dim_width]);
-    var_y = netcdf.defVar(ncid,'y','float',[dim_length, dim_width]);
-    var_time = netcdf.defVar(ncid,'time','float',dim_time);
 
-<<<<<<< Updated upstream
-    metaid = netcdf.defGrp(ncid,'meta');
-    var_eta = netcdf.defVar(ncid,'eta','float',rowMajorDims);
-    var_H_SL = netcdf.defVar(metaid,'H_SL','float',dim_time);
-    
-=======
     % coordinates (stored as netCDF type "variable")
     var_time = netcdf.defVar(ncid, 'time', 'float', dim_time);
     var_length = netcdf.defVar(ncid, 'length', 'float', dim_length);
@@ -60,21 +50,11 @@ function compileResultsToNetCDF(resultsFolder)
     var_Qs = netcdf.defVar(metaid, 'Qs', 'float', []);
 
     % now done creating things in the file
->>>>>>> Stashed changes
     netcdf.endDef(ncid);
     
     %% place variables in the fields created
 
     % place the constant variables into the file
-<<<<<<< Updated upstream
-    netcdf.putVar(ncid, var_x, permute(frst.grid.x/frst.grid.dx, [2, 1]));
-    netcdf.putVar(ncid, var_y, permute(frst.grid.y/frst.grid.dx, [2, 1]));
-    netcdf.putVar(ncid,var_time,timesToSave);
-         
-    % loop through each timeslice, load and save to a temp array (ts)
-    ts = zeros(length(outputFileList), xSize, ySize);
-    H_SL = zeros(1, length(outputFileList));
-=======
     netcdf.putVar(ncid, var_length, fliplr(frst.grid.y(:,1)'));
     netcdf.putVar(ncid, var_width, frst.grid.x(1,:));
     netcdf.putVar(ncid, var_time, timesToSave);
@@ -86,34 +66,9 @@ function compileResultsToNetCDF(resultsFolder)
     temp_Bs = zeros(length(outputFileList), ySize, xSize);
     temp_Hs = zeros(length(outputFileList), ySize, xSize);
     temp_H_SLs = zeros(1, length(outputFileList));
->>>>>>> Stashed changes
     for i=1:length(outputFileList)
         % load
         ith = load(fullfile(outputFileList(i).folder, outputFileList(i).name));
-<<<<<<< Updated upstream
-        
-        zi = ith.grid.z;
-        if i == 1
-            H_SL(i) = 80;
-        else
-            H_SL(i) = ith.grid.oceanLevel;
-        end
-        
-        % permute so time is first dimensions
-        permuted = reshape(zi, 1, xSize, ySize);
-        
-        ts(i, :, :) = permuted;
-    end
-    
-    % permute ts to rowMajorDims
-    ts  = permute(ts, [3 2 1]);
-    
-    % write out the eta field as time
-    netcdf.putVar(ncid, var_time,timesToSave);
-    netcdf.putVar(ncid, var_eta, ts);
-    netcdf.putVar(metaid, var_H_SL, H_SL);
-    
-=======
 
         % get variables
         i_eta = ith.grid.z;
@@ -159,7 +114,6 @@ function compileResultsToNetCDF(resultsFolder)
     netcdf.putVar(metaid, var_Qw, ith.grid.Qw(ith.grid.inletCell));
     netcdf.putVar(metaid, var_Qs, ith.grid.Qs_in(ith.grid.inletCell));
 
->>>>>>> Stashed changes
     % close the file
     netcdf.close(ncid)
  
