@@ -24,8 +24,8 @@ function compileResultsToNetCDF(resultsFolder)
     netCDFpath = fullfile(resultsFolder, 'elevation_timeseries.nc');
     ncid = netcdf.create(netCDFpath,'NETCDF4');
 
-    dim_length = netcdf.defDim(ncid,'length',xSize);
-    dim_width = netcdf.defDim(ncid,'width',ySize);
+    dim_length = netcdf.defDim(ncid,'length',ySize);
+    dim_width = netcdf.defDim(ncid,'width',xSize);
     dim_time = netcdf.defDim(ncid,'total_time',length(outputFileList));
          
     colMajorDims = [dim_time, dim_length, dim_width];
