@@ -88,6 +88,14 @@ function grid =  makeGrids(grid,inlet,oceanLevel) % nested function
         grid.channelFlag(inlet.row,inlet.col) = true;
         grid.inletCell = sub2ind(size(grid.x),inlet.row,inlet.col);
         
+        % preallocate other arrays for continuity in output files
+        grid.Qw = zeros(grid.size);
+        grid.Qs_in = zeros(grid.size);
+        grid.Qs_out = zeros(grid.size);
+        grid.B = zeros(grid.size);
+        grid.H = zeros(grid.size);
+        grid.S.alongFlow = zeros(grid.size);
+        
         % create a grid cell_type
         %   0 - domain cell
         %   1 - edge cell

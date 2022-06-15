@@ -26,7 +26,7 @@ function [con] = loadConstants(conset)
         case 'mars-basalt-water'
             con.g = 3.7; % gravitational constant
             con.rho_f = 1000; % fluid density, kg/m^3
-            con.rho_s = 2900; % particle density, kg/m^3
+            con.rho_s = 3000; % particle density, kg/m^3
             con.nu = 1.004 * 1e-6; % fluid kinematic viscosity, m^2/s
     end
     con.R = (con.rho_s - con.rho_f) / con.rho_f;
