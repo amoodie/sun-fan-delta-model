@@ -3,7 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Start of parameters to edit
 
-setName = 'hypanis_set1'; % base name for run and file output
+setName = 'hypanis_simple_set0'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
 
 % add the model source folder to the path
@@ -39,7 +39,7 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_inlet = 5000; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
+Qw_inlet = 7500; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
 Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
 Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
@@ -58,7 +58,7 @@ grid.DEMoptions.slope.slope = -0.00083; % slope below slope break
 
 % time paramaeters
 t = 0; % Initial time
-tMax_yr = 500; % simulation time, years
+tMax_yr = 400; % simulation time, years
 tStep_yr = 1e-3; % time step, years. Not specified in paper. There is some upper bound for stable topography change using the default input water/sediment discharges and grid cell spacing.
 tSaveInterval_yr = 1; % time interval for saving data to file, years
 tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
@@ -71,7 +71,7 @@ boundaryCondition = 'closed';
 % timeseries elevation of ponded water, m (xi_theta in the paper).
 %   we set this up as an array of directives for the rate of fall, which
 %   are then transformed to a nt x n_runs array of oceanLevel
-setRunOceanLevels = [NaN, 0, 0.1, 0.5, 1.0, inf]; % no water, constant, n_rates; (m/yr)
+setRunOceanLevels = [NaN, 0]; % no water, constant, n_rates; (m/yr)
 %   configure oceanLevel.timeStart_yr and oceanLevel.z to be the same
 %   length, and jointly defining the water level curve. In the model,
 %   water level is discretized by this curve, so choose a sufficient number
@@ -81,9 +81,9 @@ oceanLevel.steps = 1000;
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,oceanLevel.steps); % times that define start of intervals with a particular ocean level
 oceanLevel.z = NaN(oceanLevel.steps, 1);  % preallocate as NaN (replace before starting run!)
 oceanLevel.fallRate = NaN; % preallocate as NaN (replace before starting run!)
-ntChunk = 5; % how to break up the fall and flats
+ntChunk = 4; % how to break up the fall and flats
 tChunk = floor(oceanLevel.steps / ntChunk);  % duration of each chunk
-tStartFall = 1;  % when to start fall, measured in tChunks
+tStartFall = 3;  % when to start fall, measured in tChunks
 t0 = tStartFall*tChunk;  % index to start the fall
 tFallTime = ntChunk - tStartFall; % how logn the fall, measured in tChunks
 %   now, set up the array of oceanLevels for each run (preallocate as NaN)
@@ -120,6 +120,10 @@ for ol_i = 1:length(setRunOceanLevels)
     % place the temp array into the storage array
     oceanLevelArray(:, ol_i) = zi;
 end
+
+% did this work correctly?
+% figure()
+% plot(oceanLevelArray)
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
