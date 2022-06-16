@@ -30,8 +30,9 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
         flowsToInds = grid.nghbrs(channelsBool, branchIndex);
         %flowsToIdxs = find(flowsToFracs);
         for j=1:numberFlowsTo
-            testDischarge = flowsToFracs(j); % the discharge fraction in the jth branch
-            if testDischarge < Qw_threshold
+            testDischargeFrac = flowsToFracs(j); % the discharge fraction in the jth branch
+
+            if (testDischargeFrac < Qw_threshold)
                 % this channel pathway needs to be disconnected and unset
                 % along the channel course.
                 %
@@ -67,10 +68,13 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 abandonAll = false; % whether another channel stops abandonment or not
                 [grid] = unmarkChannelToNode(grid, startIndex, prevIndex, abandonAll);
 
-                % we removed one pathway (the jth pathway) of this branch
-                % (the ith branch), so we don't want to check the other
-                % (i.e., skip the other j)
-                break % break the `for j=` loop and go to next `i` branch
+                % we removed one pathway (the jth pathway) of this branch,
+                % but this changed the proportions and indices of channels
+                % in the flowsToFracs array. We could devise some way to
+                % reset this counter and keep going, but this would be
+                % difficult, I think. Instead, we just stop and will catch
+                % the abandonment on the next iteration.
+                %break % break the `for j=` loop and go to next `i` branch
 
             end
         end
