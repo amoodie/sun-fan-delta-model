@@ -112,7 +112,7 @@
 
             % make the connection to this new cell
             grid.flowsToGraph(indNghbrStep, indCurrent) = 1;
-            grid.flowsFromGraph(toToFrom(indNghbrStep), iNew, jNew) = 1;
+            grid.flowsFromGraph(toToFrom(indNghbrStep), indNew) = 1;
             wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
             grid.channelFlag(indNew) = true; % mark this cell as now being a channel
 
@@ -122,6 +122,7 @@
             % have sidewalls steer flow (closed boundary) or make boundary open or periodic).
             if iNew<1 || iNew>grid.size(1) || jNew<1 || jNew==grid.size(2)
 
+                % end iteration of the while loop
                 continuePropagateAvulsion = false;
 
             % Stop path construction if new point was already marked as a
