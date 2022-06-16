@@ -143,8 +143,9 @@ iter = 0;
         
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths
-        if ~isempty(avulsionCellInds)   
+        if ~isempty(avulsionCellInds)
             grid = enactAvulsions(avulsionCellInds,grid,inlet);
+            grid = countFlowsToInds(grid);
         end
         
         % episodically save model output
