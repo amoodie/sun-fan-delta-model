@@ -38,8 +38,10 @@ avulsionCellInfo = [];
 
             % determine avulsion susceptibility for ngbrs
             avulsionSusceptibilityIndex = NaN(8,1);
+
             %   only allowed to avulse from cells with sediment flux
-            if grid.Qs_in(k) >= Qs_threshold
+            if (grid.Qs_in(k) >= Qs_threshold)
+
                 % get idxs of neighbors
                 nghbrs = grid.nghbrs(:, k);
                 nghbrsValid = (nghbrs ~= 0);
