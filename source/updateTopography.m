@@ -71,12 +71,16 @@ function grid = updateTopography(grid,lambda,tStep_sec,Qs_inlet)
         grid.massFluxOut = sum(sum(grid.Qs_out(end, :)))*tStep_sec;
         grid.cumulativeMassFluxOut = grid.cumulativeMassFluxOut + grid.massFluxOut;
     end
-    
+
+    % make the mass balance calculation, and raise a warning if not
+    % matching!
     incoming_vol = Qs_inlet * tStep_sec;
     changing_vol = sum(sum(grid.deltaz*(1-lambda)*grid.dx*grid.dx));
     leaving_vol = grid.massFluxOut;
-    if abs((changing_vol + leaving_vol) - incoming_vol) > 1e-6
-        error('Mass did not balance!')
+    percError = ((changing_vol + leaving_vol) - incoming_vol) / incoming_vol;
+    if abs(percError) > 1e-1
+        warning(['Mass did not balance! Percent error was ' num2str(percError) '%'])
+        fprintf(['Mass did not balance! Percent error was ' num2str(percError) '%'])
     end
 
     % update topography for all grid cells

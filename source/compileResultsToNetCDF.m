@@ -9,7 +9,7 @@ function compileResultsToNetCDF(resultsFolder)
     outputFileList = dir(fullfile(resultsFolder,'*_time_*.mat'));
 
     % sort the list of names by the output time
-    [~, reindex] = sort( str2double( regexp( {outputFileList.name}, '\d++', 'match', 'once' )));
+    [~, reindex] = sort(str2double(regexp({outputFileList.name}, '\d+\.\d', 'match', 'once' )));
     outputFileList = outputFileList(reindex);
     
     % open the first file to get the info for the netCDF file
@@ -22,6 +22,9 @@ function compileResultsToNetCDF(resultsFolder)
 
     % set up the netcdf file
     netCDFpath = fullfile(resultsFolder, 'elevation_timeseries.nc');
+    if exist(netCDFpath, 'file') == 2  % delete if exists
+        delete(netCDFpath);
+    end
     ncid = netcdf.create(netCDFpath,'NETCDF4');
 
     dim_length = netcdf.defDim(ncid,'length',ySize);

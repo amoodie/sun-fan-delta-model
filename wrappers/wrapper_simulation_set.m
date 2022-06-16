@@ -39,7 +39,7 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 %%% others are added for this model implementation. 
 
 % Flow routing
-Qw_inlet = 7500; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
+Qw_inlet = 5000; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
 Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
 Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
@@ -71,7 +71,7 @@ boundaryCondition = 'closed';
 % timeseries elevation of ponded water, m (xi_theta in the paper).
 %   we set this up as an array of directives for the rate of fall, which
 %   are then transformed to a nt x n_runs array of oceanLevel
-setRunOceanLevels = [NaN, 0]; % no water, constant, n_rates; (m/yr)
+setRunOceanLevels = [0]; % no water, constant, n_rates; (m/yr)
 %   configure oceanLevel.timeStart_yr and oceanLevel.z to be the same
 %   length, and jointly defining the water level curve. In the model,
 %   water level is discretized by this curve, so choose a sufficient number
@@ -127,7 +127,7 @@ end
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
-debugFigure = false;
+debugFigure = true;
 
 % set a rng seed for reproducible timing
 % rng(1)
@@ -162,19 +162,19 @@ parameters = v2struct(parametersCell);
 % trim the parameters field
 parameters = rmfield(parameters, {'oceanLevelArray', 'setOutputDir'});
 
-parfor run_i = 1:length(setRunOceanLevels)
+for run_i = 1:length(setRunOceanLevels)
     % make a string of the run name
     runName = ['run', num2str(run_i-1)];
     disp(runName)
     
     % make a copy of the parameters
-    parameters_i = parameters
+    parameters_i = parameters;
     
     % replace values in parameters_i for this run
     parameters_i.runName = runName;
     parameters_i.oceanLevel.fallRate = setRunOceanLevels(run_i);
     parameters_i.oceanLevel.z = oceanLevelArray(:, run_i);
-    parameters_i.outputDir = fullfile(setOutputDir, runName)
+    parameters_i.outputDir = fullfile(setOutputDir, runName);
 
     % Execute model run, pausing if an error is thrown
     dbstop if error

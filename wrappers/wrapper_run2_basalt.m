@@ -49,7 +49,7 @@ Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Tab
 Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 0.05; % threshold amount of sediment transport for enacting an avulsion at cell
-branchLimit = 8;
+branchLimit = 2;
 
 grid.dx = 1000; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 200*grid.dx; % side length of square domain, m (named L_b in the paper)
@@ -58,7 +58,7 @@ grid.yExtent = grid.xExtent / 2; % added separate variabel for side length if y-
 grid.DEMoptions.initialSurfaceGeometry.type = 'slope'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
 grid.DEMoptions.initialSurfaceGeometry.minElev = 0; 
 grid.DEMoptions.addNoise = true;
-grid.DEMoptions.noiseAmplitude = 0.001; % meters
+grid.DEMoptions.noiseAmplitude = 0.1; % meters
 grid.DEMoptions.slope.slope = -0.00083; % slope below slope break
 
 % time paramaeters

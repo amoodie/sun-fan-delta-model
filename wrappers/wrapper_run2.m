@@ -49,9 +49,9 @@ Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Tab
 Qw_threshold = 0.25; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 0.05; % threshold amount of sediment transport for enacting an avulsion at cell
-branchLimit = 3;
+branchLimit = 2;
 
-grid.dx = 500; % grid spacing, m (named "a" in the paper)
+grid.dx = 1000; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 200*grid.dx; % side length of square domain, m (named L_b in the paper)
 grid.yExtent = grid.xExtent / 2; % added separate variabel for side length if y-dimension of grid
 % Parameters for initial topography (can add additional options here)
