@@ -46,8 +46,9 @@ Qw_inlet = 5000; % water discharge, m^3/s (in Table 2, base case: Qw_inlet = 20)
 Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Table 2, base case: 0.04)
 Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
-Qs_threshold = Qs_inlet * 0.05; % threshold amount of sediment transport for enacting an avulsion at cell
+Qs_threshold = 1e-19; % threshold amount of sediment transport for enacting an avulsion at cell
 branchLimit = 2;
+propogationRule = 'onestep'; % which rule to follow for propogating avulsions [ full | onestep ]
 
 grid.dx = 1000; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 200*grid.dx; % side length of square domain, m (named L_b in the paper)
@@ -97,7 +98,7 @@ oceanLevel.z(oceanLevel.z < grid.DEMoptions.initialSurfaceGeometry.minElev) = Na
 debugFigure = true;
 
 % set a rng seed for reproducible timing
-rng(1)
+rng(10)
 
 %%% End of parameters to edit 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
