@@ -49,10 +49,10 @@ D = 0.3e-3; % grain diameter, m (in Table 2, base case: D = 0.3e-3)
 Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 0.05; % threshold amount of sediment transport for enacting an avulsion at cell
-branchLimit = 2;
+branchLimit = 8;
 
 grid.dx = 100; % grid spacing, m (named "a" in the paper)
-grid.xExtent = grid.dx; % side length of square domain, m (named L_b in the paper)
+grid.xExtent = 100*grid.dx; % side length of square domain, m (named L_b in the paper)
 grid.yExtent = grid.xExtent; % added separate variabel for side length if y-dimension of grid
 % Parameters for initial topography (can add additional options here)
 grid.DEMoptions.initialSurfaceGeometry.type = 'flat'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
@@ -69,7 +69,7 @@ tElapsedSinceSave_yr = 0; % variable to record elapsed time since saving
 
 % boundary conditions
 inlet.row = 1; % set inlet point for water and sediment
-inlet.col = 11;
+inlet.col = 1;
 boundaryCondition = 'closed';
 oceanLevel.timeStart_yr = linspace(0,tMax_yr,10); % times that define start of intervals with a particular ocean level
 oceanLevel.z = linspace(2,2,10); % timeseries elevation of ponded water, m (xi_theta in the paper). The length of this vector must equal the length of the previous parameter.

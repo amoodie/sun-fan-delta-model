@@ -3,8 +3,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Start of parameters to edit
 
-setName = 'hypanis_simple_set0'; % base name for run and file output
+setName = 'hypanis_set'; % base name for run and file output
 clobber = true; % whether to overwrite output folder if exists
+ensemble = 3;  % number of replicates to run
 
 % add the model source folder to the path
 codeDir = genpath(fullfile('.','..','source'));
@@ -26,7 +27,7 @@ tauStar_c = 0; % from Table 1. This parameter is important and was set to 0 in S
 % below a threshold value, set Qs to zero). 
 n = 2.5; % from Table 1
 p = 0; % from Table 1
-R = con.R; % from Table 1
+R = con.R; % modified for Mars (i.e., basalt)
 g = con.g; % gravitational acceleration, m^2/s, modified for Mars. Gravity affects calculation of channel width (B) and sediment flux (Q_s). Do any of the other parameters depend on g?
 gamma = 0.5; % from Table 1
 lambda = 0.4; % from Table 1
@@ -44,7 +45,8 @@ Qs_inlet = 10; % sediment discharge, m^3/s (named Q_sf in original paper. In Tab
 Qw_threshold = 0.05; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 0.05; % threshold amount of sediment transport for enacting an avulsion at cell
-branchLimit = 2;
+branchLimit = 8;
+propogationRule = 'full'; % which rule to follow for propogating avulsions [ full | onestep ]
 
 grid.dx = 1000; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 200*grid.dx; % side length of square domain, m (named L_b in the paper)
@@ -53,7 +55,7 @@ grid.yExtent = grid.xExtent / 2; % added separate variabel for side length if y-
 grid.DEMoptions.initialSurfaceGeometry.type = 'slope'; % 'slopeBreak' | 'flat' % a 'flat' condition is used in Sun et al. (2002)
 grid.DEMoptions.initialSurfaceGeometry.minElev = 0; 
 grid.DEMoptions.addNoise = true;
-grid.DEMoptions.noiseAmplitude = 0.1; % meters
+grid.DEMoptions.noiseAmplitude = 1; % meters
 grid.DEMoptions.slope.slope = -0.00083; % slope below slope break
 
 % time paramaeters
@@ -71,7 +73,7 @@ boundaryCondition = 'closed';
 % timeseries elevation of ponded water, m (xi_theta in the paper).
 %   we set this up as an array of directives for the rate of fall, which
 %   are then transformed to a nt x n_runs array of oceanLevel
-setRunOceanLevels = [0]; % no water, constant, n_rates; (m/yr)
+setRunOceanLevels = [NaN, 0, Inf]; % no water, constant, n_rates; (m/yr); NaN for no water, 0 for constant, Inf for isntant drop
 %   configure oceanLevel.timeStart_yr and oceanLevel.z to be the same
 %   length, and jointly defining the water level curve. In the model,
 %   water level is discretized by this curve, so choose a sufficient number
@@ -83,11 +85,14 @@ oceanLevel.z = NaN(oceanLevel.steps, 1);  % preallocate as NaN (replace before s
 oceanLevel.fallRate = NaN; % preallocate as NaN (replace before starting run!)
 ntChunk = 4; % how to break up the fall and flats
 tChunk = floor(oceanLevel.steps / ntChunk);  % duration of each chunk
-tStartFall = 3;  % when to start fall, measured in tChunks
+tStartFall = 2;  % when to start fall, measured in tChunks
 t0 = tStartFall*tChunk;  % index to start the fall
 tFallTime = ntChunk - tStartFall; % how logn the fall, measured in tChunks
+
 %   now, set up the array of oceanLevels for each run (preallocate as NaN)
-oceanLevelArray = NaN(oceanLevel.steps, length(setRunOceanLevels));
+%   here, we expand to make an ensemble if needed
+oceanLevelArray = NaN(oceanLevel.steps, length(setRunOceanLevels) * ensemble);
+setRunOceanLevelsEnsemble = repelem(setRunOceanLevels, ensemble);
 for ol_i = 1:length(setRunOceanLevels)
     % preallocate the z array for this run
     zi = NaN(oceanLevel.steps, 1);
@@ -113,21 +118,20 @@ for ol_i = 1:length(setRunOceanLevels)
             zi(zi < grid.DEMoptions.initialSurfaceGeometry.minElev) = NaN;
         else
             % special case for Inf, this is the instant drop to half
-            zEndInstant = zStartWater / 2;
+            zEndInstant = (zStartWater/4);
             zi(t0+1:end) = zEndInstant;
         end
     end
-    % place the temp array into the storage array
-    oceanLevelArray(:, ol_i) = zi;
+    for ol_j = 1:ensemble
+        % place the temp array into the storage array
+        ol_idx = ((ol_i-1)*ensemble)+(ol_j);
+        oceanLevelArray(:, ol_idx) = zi;
+    end
 end
-
-% did this work correctly?
-% figure()
-% plot(oceanLevelArray)
 
 % Flag to show a debugging figure. This is computationally expensive, so
 % only use to debug.
-debugFigure = true;
+debugFigure = false;
 
 % set a rng seed for reproducible timing
 % rng(1)
@@ -162,7 +166,7 @@ parameters = v2struct(parametersCell);
 % trim the parameters field
 parameters = rmfield(parameters, {'oceanLevelArray', 'setOutputDir'});
 
-for run_i = 1:length(setRunOceanLevels)
+parfor run_i = 1:length(setRunOceanLevelsEnsemble)
     % make a string of the run name
     runName = ['run', num2str(run_i-1)];
     disp(runName)
@@ -172,7 +176,7 @@ for run_i = 1:length(setRunOceanLevels)
     
     % replace values in parameters_i for this run
     parameters_i.runName = runName;
-    parameters_i.oceanLevel.fallRate = setRunOceanLevels(run_i);
+    parameters_i.oceanLevel.fallRate = setRunOceanLevelsEnsemble(run_i);
     parameters_i.oceanLevel.z = oceanLevelArray(:, run_i);
     parameters_i.outputDir = fullfile(setOutputDir, runName);
 
@@ -182,7 +186,7 @@ for run_i = 1:length(setRunOceanLevels)
 end
 
 % compile the results
-parfor run_i = 1:length(setRunOceanLevels)
+parfor run_i = 1:length(setRunOceanLevelsEnsemble)
     % make a string of the run name
     runName = ['run', num2str(run_i-1)];
     disp(runName)

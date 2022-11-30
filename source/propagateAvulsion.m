@@ -1,4 +1,4 @@
-    function grid=propagateAvulsion(grid,avulsionCellInfo) % nested function
+    function [grid,firstStep] = propagateAvulsion(grid,avulsionCellInfo,propogationRule) % nested function
        % propagateAvulsion: creates path for avulsion channel.
         %%% Path selection is implemented following Sun et al., 2005, as best as possible.
         %%% The path is selected towards a steepest descent, but with
@@ -27,7 +27,7 @@
 
         % configure index stepper based on grid dimensions
         toToFrom = [5, 6, 7, 8, 1, 2, 3, 4]; % convert the direction step to new cell into a step from 
-             
+
         % configure the probabalistic routing array (theta_ij in paper) based on 
         % neighboring cells of avulsion site
         %   Check if the avulsing cell flows anywhere
@@ -116,6 +116,13 @@
             wasChannel = grid.channelFlag(indNew); % was this cell a channel *before* we got here
             grid.channelFlag(indNew) = true; % mark this cell as now being a channel
 
+            % The following is for a sensitivity test with one-step routing
+            % here, we kill the loop without taking any additional steps if
+            % the rule is 'onestep'.
+            if strcmp(propogationRule, 'onestep')
+                break
+            end
+
             %% determine whether the new point is somewhere we want to continue from
 
             % Stop path construction if new point is beyond domain boundary (Alternatively, could
@@ -160,8 +167,8 @@
                 indCurrent = indNew;
             end
 
-        end % end while loop for avulsion path construction 
-    end % end nested function propagateAvulsion        
+        end % end while loop for avulsion path construction
+    end % end nested function propagateAvulsion
 
 
 function [forbiddenCorners] = checkNeighborsChannelsCrossover(grid, nghbrs)

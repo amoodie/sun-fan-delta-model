@@ -33,6 +33,7 @@ Qs_inlet = parameters.Qs_inlet;
 Qw_threshold = parameters.Qw_threshold;
 Qs_threshold = parameters.Qs_threshold;
 branchLimit = parameters.branchLimit;
+propogationRule = parameters.propogationRule
 Qw_mismatch_tolerance = parameters.Qw_mismatch_tolerance; 
 D = parameters.D; 
 oceanLevel = parameters.oceanLevel;
@@ -89,9 +90,12 @@ end
 
 % create a debugging figure if specified
 if debugFigure
-    debugFigureUpdateTime = tStep_sec * 100; % how often to update
+    debugFigureUpdateTime = tStep_sec * 500; % how often to update
     debugFig = figure('Position', [10 10 900 600]);
 end
+
+% preallocate a cell array to track the avulsions in each saving interval
+avulsionLocationTimeseries = cell(length(startingTime:tStep_sec:tMax_sec),1);
 
 %%%%%%%% time loop %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 iter = 0;
@@ -105,21 +109,21 @@ iter = 0;
 
         % look up slope along flow paths
         grid=slopeAlongFlow(grid); % updates field grid.S.alongFlow
-        
+
         % update morphodynamic variables for each cell in the grid
         % (channel width, chanenl depth and sediment flux)
         grid = updateMorphodynamicVariables(grid,alpha_b,alpha_r,alpha_sa,alpha_so,R,g,D,tauStar_c,n,p,false);
-        
+
         % update the debugging figure
         if debugFigure
             if mod(t, debugFigureUpdateTime) == 0
                 debugFig = updateDebugFigure(debugFig, grid);
             end
         end
-        
+
         % update bed elevation along flow paths
         grid = updateTopography(grid,lambda,tStep_sec,Qs_inlet);
-        
+
         % update slope arrays following topography update
         grid = updateSlope(grid,boundaryCondition,t); 
 
@@ -128,7 +132,7 @@ iter = 0;
         indOceanLevel = find(t_yr>=oceanLevel.timeStart_yr,1,'last');
         grid.oceanLevel = oceanLevel.z(indOceanLevel);
         grid.oceanFlag = grid.z <= grid.oceanLevel;
-        
+
         % check that any channels that are receiving flow below threshold
         % are disconnected from the network
         grid = unmarkAbandonedChannels(grid,Qw_threshold);
@@ -136,18 +140,23 @@ iter = 0;
         % compute the flowsToCount for each cell (there may have been
         % changes to the network in above step)
         grid = countFlowsToInds(grid);
-        
+
         % check for avulsion sites (criterion: eqn. 13). Change of flow
         % path from i-->j to i-->k initiated if criterion is met.
-        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold,branchLimit);
-        
+        avulsionCellInds = avulsionCheck(grid,beta,Qs_threshold);
+
         % if any avulsion sites were identified, enact avulsions that 
         % create new flow paths
         if ~isempty(avulsionCellInds)
-            grid = enactAvulsions(avulsionCellInds,grid,inlet);
+            [grid,successfulAvulsions] = enactAvulsions(avulsionCellInds,grid,inlet,branchLimit,propogationRule);
+
+            % update the counts of graph
             grid = countFlowsToInds(grid);
+
+            % store the avulsion locations into the storage array
+            avulsionLocationTimeseries(iter+1) = {successfulAvulsions};
         end
-        
+
         % episodically save model output
         tElapsedSinceSave_yr = tElapsedSinceSave_yr + tStep_sec/(secondsPerYear);
         if tElapsedSinceSave_yr >= tSaveInterval_yr || t == tMax_yr
@@ -158,4 +167,7 @@ iter = 0;
         end
         iter = iter + 1;
     end % end time loop
+
+    % save the avulsion location timeseries
+    save(fullfile(outputDir,'avulsion_timeseries.mat'), 'avulsionLocationTimeseries')
 end % end function sunFanModel
