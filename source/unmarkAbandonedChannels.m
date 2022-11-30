@@ -46,7 +46,7 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
                 % multiple flowsFrom (only one of which is the abandoned
                 % pathway we walked down).                
                 startIndex = flowsToInds(j); % cell index for path starting-point (index of abandoned channel head, not branch)
-                prevIndex = branchIndex; % cell index for previous cell of path starting-point
+                prevIndex = branchIndex; % cell index for previous cell of path starting-point (i.e., branch index)
 
                 % now, we start to actually do the unsetting and walking.
 
@@ -79,4 +79,7 @@ function grid=unmarkAbandonedChannels(grid,Qw_threshold)
             end
         end
     end
+
+    % determine the count of flows from
+    grid.flowsFromCount = squeeze(sum(grid.flowsFromGraph, 1));
 end

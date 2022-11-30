@@ -8,6 +8,8 @@
         % determine all the channel locations to loop through
         channelInds = find(grid.channelFlag);
 
+        L_ik = grid.dx*[sqrt(2); 1; sqrt(2); 1; sqrt(2); 1; sqrt(2); 1]; % distance from starting cell to search cell
+
         for kk=1:numel(channelInds)
             k = channelInds(kk);
             if grid.flowsToCount(k) == 0
@@ -35,4 +37,5 @@
                 grid.S.alongFlow(k) = max(S_temp); % if there are multiple flowsTo cells, treat slope as the maximum of slopes to each cell
             end
         end
+
     end % end nested function slopeAlongFlow
