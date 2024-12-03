@@ -42,6 +42,19 @@ function grid =  makeGrids(grid,inlet,oceanLevel) % nested function
                 zVec=(1:grid.size(1))'*grid.dx*grid.DEMoptions.slope.slope;
                 zVec = zVec + grid.DEMoptions.initialSurfaceGeometry.minElev - min(zVec);  % set to min at minElev
                 grid.z = repmat(zVec,1,grid.size(2));
+            case 'fjord'
+                % create one constant slope through the whole domain
+                zVec=(1:grid.size(1))'*grid.dx*grid.DEMoptions.slope.slope;
+                zVec = zVec + grid.DEMoptions.initialSurfaceGeometry.minElev - min(zVec);  % set to min at minElev
+                grid.z = repmat(zVec,1,grid.size(2));
+                % now adjust the basin to be a fjord
+                sidewallLength = grid.DEMoptions.initialSurfaceGeometry.sidewallLength;
+                startZ = grid.DEMoptions.initialSurfaceGeometry.minElev + (grid.size(1)*grid.dx*abs(grid.DEMoptions.slope.slope));
+                startZ = max(startZ, max(oceanLevel.z));
+                swzVec = linspace(startZ, grid.DEMoptions.initialSurfaceGeometry.minElev, sidewallLength);
+                sidewallArray = repmat(swzVec, grid.size(1), 1);
+                grid.z(:,1:sidewallLength) = max(grid.z(:,1:sidewallLength), sidewallArray);
+                grid.z(:,end-sidewallLength+1:end) = max(grid.z(:,end-sidewallLength+1:end), fliplr(sidewallArray));
         end
         
         if grid.DEMoptions.addNoise
