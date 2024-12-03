@@ -87,7 +87,7 @@ function [visitedCells] = walkChannelToNodeDrawArrows(grid, iStart, jStart, visi
             elseif numel(ijFlowsTo) >= 2
                 % a branch
                 % traverse any pathways below this branch (recursion)
-                for bb=1:2
+                for bb=1:numel(ijFlowsTo)
                     % walk each branch, recursively
                     [x,y] = ind2sub(gridsize, ijFlowsTo(bb));
                     [visitedCells] = walkChannelToNodeDrawArrows(grid, x, y, visitedCells);
