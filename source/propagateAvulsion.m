@@ -52,6 +52,7 @@
         end
 
         % while there is still non-ocean non-channel non-sink cells to walk
+        firstStep = 0;  % init as zero, not taken
         continuePropagateAvulsion = true;
         while continuePropagateAvulsion
             %% while we want to find the next step, find where *might* go
@@ -96,7 +97,7 @@
             normfunc(isnan(nghbrSlopes)) = NaN;
 
             % make a probability for each neighbor
-            probs = (nghbrSlopes .* normfunc) / nansum(nghbrSlopes .* normfunc);
+            probs = (nghbrSlopes .* normfunc) / sum(nghbrSlopes .* normfunc, "omitnan");
 
             % now find the index of the next location that we might visit
             indNghbrStep = find(rand()<=cumsum(probs, 'omitnan'), 1, 'first');
@@ -121,6 +122,12 @@
             % the rule is 'onestep'.
             if strcmp(propogationRule, 'onestep')
                 break
+            end
+
+            % if the firstStep is zero, then no step has been taken yet, so
+            % we record the new index (the first step) into firstStep
+            if firstStep == 0
+                firstStep = indNew;
             end
 
             %% determine whether the new point is somewhere we want to continue from
