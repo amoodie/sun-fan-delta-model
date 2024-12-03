@@ -50,6 +50,7 @@ Qw_threshold = 0.00000005; % water discharge fraction to cut off channels
 Qw_mismatch_tolerance = 1e-3; % tolerance param for raising a water mass-conservation error
 Qs_threshold = Qs_inlet * 1e-9; % threshold amount of sediment transport for enacting an avulsion at cell
 branchLimit = 8;
+propogationRule = 'full'; % which rule to follow for propogating avulsions [ full | onestep ]
 
 grid.dx = 100; % grid spacing, m (named "a" in the paper)
 grid.xExtent = 100*grid.dx; % side length of square domain, m (named L_b in the paper)
